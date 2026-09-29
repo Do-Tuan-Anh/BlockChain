@@ -1,3 +1,18 @@
+# Node.js dependencies and build output
+node_modules/
+dist/
+.next/
+out/
+coverage/
+.turbo/
+
+# Hardhat generated output
+artifacts/
+cache/
+
+# Local environment files
+.env.*
+!.env.example
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -216,3 +231,4 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+node_modules
