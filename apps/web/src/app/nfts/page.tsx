@@ -1,8 +1,11 @@
 "use client";
 
 import React from "react";
+import { useTranslation } from "../../contexts/LanguageContext";
 
 export default function UserNFTVaultPage() {
+  const { t } = useTranslation();
+
   const ownedNFTs = [
     {
       tokenId: "1",
@@ -27,10 +30,8 @@ export default function UserNFTVaultPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       <div>
-        <h1 className="text-3xl font-extrabold text-gray-900">Your Physical NFT Certificates</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Cryptographic digital product passports transferred to your wallet upon physical delivery confirmation.
-        </p>
+        <h1 className="text-3xl font-extrabold text-gray-900">{t("nfts.title")}</h1>
+        <p className="text-sm text-gray-500 mt-1">{t("nfts.subtitle")}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -55,11 +56,10 @@ export default function UserNFTVaultPage() {
                 <span className="text-xs text-gray-400 block font-medium uppercase">{item.category}</span>
                 <h3 className="text-base font-bold text-gray-900">{item.title}</h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Delivered on {item.acquiredDate} via Order #{item.orderId}
+                  {t("nfts.deliveredOn")} {item.acquiredDate} {t("nfts.viaOrder")} #{item.orderId}
                 </p>
               </div>
 
-              {/* Attributes Grid */}
               <div className="grid grid-cols-2 gap-2 text-xs">
                 {item.attributes.map((a) => (
                   <div key={a.trait} className="bg-gray-50 p-2 rounded-lg border border-gray-100">
@@ -69,14 +69,13 @@ export default function UserNFTVaultPage() {
                 ))}
               </div>
 
-              {/* On-Chain Specs */}
               <div className="pt-3 border-t border-gray-100 space-y-1 text-xs text-gray-500">
                 <div className="flex justify-between">
-                  <span>Contract:</span>
+                  <span>{t("nfts.contract")}</span>
                   <span className="font-mono text-gray-800 truncate max-w-[150px]">{item.contractAddress}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Product Hash:</span>
+                  <span>{t("nfts.productHash")}</span>
                   <span className="font-mono text-gray-800 truncate max-w-[150px]">{item.productHash}</span>
                 </div>
               </div>
@@ -85,7 +84,7 @@ export default function UserNFTVaultPage() {
                 href={`/orders/${item.orderId}`}
                 className="block text-center w-full bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-semibold py-2.5 rounded-xl transition"
               >
-                View Order & Provenance →
+                {t("nfts.viewOrder")}
               </a>
             </div>
           </div>
@@ -94,4 +93,3 @@ export default function UserNFTVaultPage() {
     </div>
   );
 }
-

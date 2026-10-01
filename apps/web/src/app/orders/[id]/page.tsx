@@ -65,7 +65,14 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
               Escrow {orderStatus}
             </span>
           </div>
-          <p className="text-xs text-gray-500 mt-1">Placed on {new Date(order.createdAt).toLocaleDateString()}</p>
+          <p className="text-xs text-gray-500 mt-1">
+            Placed on {new Date(order.createdAt).toLocaleDateString("vi-VN", {
+              timeZone: "Asia/Ho_Chi_Minh",
+              day: "numeric",
+              month: "numeric",
+              year: "numeric",
+            })}
+          </p>
         </div>
 
         <a

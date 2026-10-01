@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslation } from "../../contexts/LanguageContext";
 
 export default function CreateListingPage() {
+  const { t } = useTranslation();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("Sneakers");
@@ -13,16 +15,47 @@ export default function CreateListingPage() {
   const [step, setStep] = useState<"form" | "minting" | "listing" | "completed">("form");
   const [mintedTokenId, setMintedTokenId] = useState<string | null>(null);
 
-  const categories = ["Sneakers", "Electronics", "Watches", "Gaming", "Collectibles", "Fashion"];
-  const conditions = ["New in Box", "Like New", "Good", "Fair", "Pristine"];
+  const categoryKeys = ["Sneakers", "Electronics", "Watches", "Gaming", "Collectibles", "Fashion"];
+  const conditionKeys = ["New in Box", "Like New", "Good", "Fair", "Pristine"];
 
-  const handleMintAndList = (e: React.FormEvent) => {
+  const handleMintAndList = async (e: React.FormEvent) => {
     e.preventDefault();
     setStep("minting");
+
+    // Save to database
+    let savedProduct: any = null;
+    try {
+      await fetch("/api/products", {
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          description,
+          category,
+          condition,
+          brand,
+          model,
+          price,
+          currency: "ETH",
+          sellerId: "demo-seller", // In production, use authenticated user ID
+          sellerWallet: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+          sellerUsername: "demo_seller",
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        savedProduct = data.product;
+      }
+    } catch (e) {
+      // Continue with simulation even if API fails
+    }
 
     // Simulate Step 1: Minting NFT on-chain
     setTimeout(() => {
       setMintedTokenId("5");
+      const tokenId = savedProduct?.id?.slice(-4) || "5";
+      setMintedTokenId(tokenId);
       setStep("listing");
 
       // Simulate Step 2: Creating Listing in Marketplace.sol
@@ -35,10 +68,8 @@ export default function CreateListingPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       <div>
-        <h1 className="text-3xl font-extrabold text-gray-900">List an Item for Sale</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Mint a verifiable on-chain NFT certificate for your physical product and list it on the escrow marketplace.
-        </p>
+        <h1 className="text-3xl font-extrabold text-gray-900">{t("createListing.title")}</h1>
+        <p className="text-sm text-gray-500 mt-1">{t("createListing.subtitle")}</p>
       </div>
 
       {step === "completed" ? (
@@ -46,16 +77,16 @@ export default function CreateListingPage() {
           <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold">
             ✓
           </div>
-          <h2 className="text-xl font-bold text-gray-900">Product Successfully Listed!</h2>
+          <h2 className="text-xl font-bold text-gray-900">{t("createListing.successTitle")}</h2>
           <p className="text-sm text-gray-600 max-w-md mx-auto">
-            Your physical item is now represented by <strong>NFT #{mintedTokenId}</strong> and is live on the marketplace for <strong>{price} ETH</strong>.
+            {t("createListing.successDesc")} <strong>NFT #{mintedTokenId}</strong> — <strong>{price} ETH</strong>.
           </p>
           <div className="pt-4 flex justify-center space-x-4">
             <a
               href="/explore"
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-6 py-2.5 rounded-xl transition"
             >
-              View in Marketplace
+              {t("createListing.viewMarketplace")}
             </a>
             <button
               onClick={() => {
@@ -65,25 +96,24 @@ export default function CreateListingPage() {
               }}
               className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-sm px-6 py-2.5 rounded-xl transition"
             >
-              List Another Item
+              {t("createListing.listAnother")}
             </button>
           </div>
         </div>
       ) : (
         <form onSubmit={handleMintAndList} className="space-y-6">
-          {/* Main Form Fields */}
           <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 space-y-6 shadow-xs">
             <h2 className="text-base font-bold text-gray-900 border-b border-gray-100 pb-3">
-              1. Physical Product Information
+              {t("createListing.sectionTitle")}
             </h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Product Title *</label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">{t("createListing.productTitle")}</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Nike Air Max 1 '86 OG Big Bubble"
+                  placeholder={t("createListing.productTitlePlaceholder")}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500"
@@ -92,27 +122,27 @@ export default function CreateListingPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Category *</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">{t("createListing.category")}</label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
                     className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500"
                   >
-                    {categories.map((c) => (
-                      <option key={c} value={c}>{c}</option>
+                    {categoryKeys.map((c) => (
+                      <option key={c} value={c}>{t(`categories.${c}`)}</option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Condition *</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">{t("createListing.conditionLabel")}</label>
                   <select
                     value={condition}
                     onChange={(e) => setCondition(e.target.value)}
                     className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500"
                   >
-                    {conditions.map((c) => (
-                      <option key={c} value={c}>{c}</option>
+                    {conditionKeys.map((c) => (
+                      <option key={c} value={c}>{t(`conditions.${c}`)}</option>
                     ))}
                   </select>
                 </div>
@@ -120,10 +150,10 @@ export default function CreateListingPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Brand</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">{t("createListing.brand")}</label>
                   <input
                     type="text"
-                    placeholder="e.g. Nike, Apple, Sony"
+                    placeholder={t("createListing.brandPlaceholder")}
                     value={brand}
                     onChange={(e) => setBrand(e.target.value)}
                     className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500"
@@ -131,10 +161,10 @@ export default function CreateListingPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Model / Serial</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">{t("createListing.modelSerial")}</label>
                   <input
                     type="text"
-                    placeholder="e.g. Air Max 1, PS5"
+                    placeholder={t("createListing.modelPlaceholder")}
                     value={model}
                     onChange={(e) => setModel(e.target.value)}
                     className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500"
@@ -143,11 +173,11 @@ export default function CreateListingPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Description *</label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">{t("createListing.description")}</label>
                 <textarea
                   required
                   rows={4}
-                  placeholder="Provide honest, detailed condition notes. Mention all accessories, packaging, and cosmetic details."
+                  placeholder={t("createListing.descriptionPlaceholder")}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500"
@@ -155,7 +185,7 @@ export default function CreateListingPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Listing Price (ETH) *</label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">{t("createListing.listingPrice")}</label>
                 <div className="relative">
                   <input
                     type="number"
@@ -172,27 +202,22 @@ export default function CreateListingPage() {
             </div>
           </div>
 
-          {/* Privacy & IPFS Notice */}
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-800 space-y-1">
-            <p className="font-semibold">⚠️ Privacy Protection Policy:</p>
-            <p>
-              Your personal information (real name, home address, phone number) is never written to IPFS or the blockchain. Only non-sensitive product traits (Brand, Model, Condition, Product Hash) are stored in the public NFT metadata.
-            </p>
+            <p className="font-semibold">{t("createListing.privacyTitle")}</p>
+            <p>{t("createListing.privacyDesc")}</p>
           </div>
 
-          {/* Submit Action */}
           <button
             type="submit"
             disabled={step !== "form"}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 rounded-xl transition text-sm disabled:opacity-50"
           >
-            {step === "minting" && "Step 1/2: Minting NFT Certificate on Blockchain..."}
-            {step === "listing" && "Step 2/2: Approving & Listing on Marketplace.sol..."}
-            {step === "form" && "Mint NFT & List on Marketplace"}
+            {step === "minting" && t("createListing.mintingStep")}
+            {step === "listing" && t("createListing.listingStep")}
+            {step === "form" && t("createListing.submitButton")}
           </button>
         </form>
       )}
     </div>
   );
 }
-

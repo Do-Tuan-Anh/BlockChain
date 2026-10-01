@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslation } from "../../../contexts/LanguageContext";
 
 export default function ProductDetailPage({ params }: { params: { id: string } }) {
+  const { t } = useTranslation();
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [purchaseStep, setPurchaseStep] = useState<"idle" | "wallet" | "confirming" | "success">("idle");
   const [txHash, setTxHash] = useState("");
@@ -46,7 +48,6 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     setIsPurchasing(true);
     setPurchaseStep("wallet");
 
-    // Simulate smart contract buyItem() invocation
     setTimeout(() => {
       setPurchaseStep("confirming");
       setTimeout(() => {
@@ -68,7 +69,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
               className="w-full h-full object-cover"
             />
             <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm border border-blue-200 text-blue-700 text-xs font-semibold px-3 py-1.5 rounded-full shadow-xs">
-              ✓ Verified Physical NFT #{product.nft.tokenId}
+              {t("product.verified")} #{product.nft.tokenId}
             </div>
           </div>
         </div>
@@ -91,26 +92,26 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
           <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs space-y-4">
             <div className="flex items-baseline justify-between border-b border-gray-100 pb-4">
               <div>
-                <span className="text-xs text-gray-400 block font-medium uppercase">Price</span>
+                <span className="text-xs text-gray-400 block font-medium uppercase">{t("product.price")}</span>
                 <span className="text-3xl font-black text-gray-900">
                   {product.price}{" "}
                   <span className="text-lg font-medium text-gray-600">{product.currency}</span>
                 </span>
               </div>
               <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full font-medium">
-                🔒 Escrow Protected
+                {t("product.escrowProtected")}
               </span>
             </div>
 
             <div className="text-xs text-gray-500 space-y-1.5">
               <p className="flex items-center">
-                <span className="text-emerald-600 mr-2">✔</span> Payment is held in smart contract until you inspect the parcel.
+                <span className="text-emerald-600 mr-2">✔</span>{t("product.escrowNote1")}
               </p>
               <p className="flex items-center">
-                <span className="text-emerald-600 mr-2">✔</span> NFT certificate transfers automatically upon delivery confirmation.
+                <span className="text-emerald-600 mr-2">✔</span>{t("product.escrowNote2")}
               </p>
               <p className="flex items-center">
-                <span className="text-emerald-600 mr-2">✔</span> Inspection Window: {product.escrowTerms.inspectionWindow}.
+                <span className="text-emerald-600 mr-2">✔</span>{t("product.escrowNote3")} {product.escrowTerms.inspectionWindow}.
               </p>
             </div>
 
@@ -118,7 +119,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
               onClick={handleBuyNow}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 rounded-xl transition shadow-xs text-sm"
             >
-              Buy Now with Escrow
+              {t("product.buyNowEscrow")}
             </button>
           </div>
 
@@ -131,7 +132,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
               <div>
                 <h4 className="text-sm font-semibold text-gray-900">{product.seller.username}</h4>
                 <p className="text-xs text-gray-500">
-                  ★ <strong className="text-amber-600">{product.seller.rating}</strong> ({product.seller.reviewCount} reviews) • {product.seller.successfulSales} completed sales
+                  ★ <strong className="text-amber-600">{product.seller.rating}</strong> ({product.seller.reviewCount} {t("product.reviews")}) • {product.seller.successfulSales} {t("product.completedSales")}
                 </p>
               </div>
             </div>
@@ -139,107 +140,34 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
               href={`/seller/${product.seller.walletAddress}`}
               className="text-xs font-medium text-blue-600 hover:text-blue-700"
             >
-              View Profile →
+              {t("product.viewProfile")}
             </a>
           </div>
 
           {/* Blockchain & NFT Verification Details */}
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700">
-              Blockchain & NFT Certificate Specs
-            </h3>
-            <div className="grid grid-cols-2 gap-y-2 text-xs">
-              <span className="text-gray-500">Token ID:</span>
-              <span className="font-mono text-gray-900">#{product.nft.tokenId}</span>
-
-              <span className="text-gray-500">Contract:</span>
-              <span className="font-mono text-gray-900 truncate">{product.nft.contractAddress}</span>
-
-              <span className="text-gray-500">Metadata (IPFS):</span>
-              <a
-                href="https://ipfs.io"
-                target="_blank"
-                rel="noreferrer"
-                className="text-blue-600 truncate hover:underline"
-              >
-                {product.nft.metadataUri}
-              </a>
-
-              <span className="text-gray-500">Product Hash:</span>
-              <span className="font-mono text-gray-900 truncate">{product.nft.productHash}</span>
-            </div>
-
-            <div className="pt-2 border-t border-gray-200">
-              <a
-                href={`/verify/${product.nft.tokenId}`}
-                className="inline-flex items-center justify-center w-full gap-2 bg-white hover:bg-gray-100 text-blue-700 border border-blue-200 py-2 rounded-lg text-xs font-semibold transition"
-              >
-                <span>🔍 Scan QR / View Provenance History</span>
-              </a>
+            <h3 className="text-sm font-bold text-gray-900">{t("product.verificationDetails")}</h3>
+            <div className="space-y-1.5 text-xs text-gray-600">
+              <div className="flex justify-between">
+                <span>{t("product.contractAddress")}</span>
+                <span className="font-mono text-gray-800 truncate max-w-[150px]">{product.nft.contractAddress}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>{t("product.tokenId")}</span>
+                <span className="font-mono text-gray-800">{product.nft.tokenId}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>{t("product.tokenStandard")}</span>
+                <span>{product.nft.standard}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>{t("product.network")}</span>
+                <span>{product.nft.network}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Checkout Modal Simulation */}
-      {isPurchasing && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-gray-900">Smart Contract Escrow Checkout</h3>
-
-            {purchaseStep === "wallet" && (
-              <div className="text-center py-6 space-y-3">
-                <div className="animate-spin w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto" />
-                <p className="text-sm font-semibold text-gray-800">Waiting for Wallet Confirmation...</p>
-                <p className="text-xs text-gray-500">Please approve the 0.50 ETH transaction in MetaMask.</p>
-              </div>
-            )}
-
-            {purchaseStep === "confirming" && (
-              <div className="text-center py-6 space-y-3">
-                <div className="animate-pulse w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mx-auto text-blue-600 text-lg font-bold">
-                  ⛓
-                </div>
-                <p className="text-sm font-semibold text-gray-800">Locking Funds in Escrow Contract...</p>
-                <p className="text-xs text-gray-500">Awaiting block confirmation on EVM network.</p>
-              </div>
-            )}
-
-            {purchaseStep === "success" && (
-              <div className="text-center py-4 space-y-4">
-                <div className="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
-                  ✓
-                </div>
-                <div>
-                  <h4 className="text-base font-bold text-gray-900">Payment Successfully Escrowed!</h4>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Order #1 created. The seller has been notified to ship the item.
-                  </p>
-                </div>
-                <div className="bg-gray-50 p-2.5 rounded-lg text-left text-xs font-mono text-gray-600 break-all">
-                  Tx Hash: {txHash}
-                </div>
-                <a
-                  href="/orders/1"
-                  className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition text-sm text-center"
-                >
-                  Track Order in Dashboard →
-                </a>
-              </div>
-            )}
-
-            {purchaseStep !== "success" && (
-              <button
-                onClick={() => setIsPurchasing(false)}
-                className="w-full text-xs text-gray-500 hover:text-gray-700"
-              >
-                Cancel
-              </button>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
-

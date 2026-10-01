@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  BUYER
+  SELLER
+  ADMIN
+}
+
+enum ProductStatus {
+  DRAFT
+  MINTED
+  LISTED
+  SOLD
+  ARCHIVED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  walletAddress String    @unique
+  username      String    @unique
+  email         String?   
+  avatarUrl     String?
+  bio           String?
+  role          Role      @default(BUYER)
+  isVerified    Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  products      Product[] @relation("SellerProducts")
+
+  @@map("users")
+}
+
+model Product {
+  id          String        @id @default(cuid())
+  title       String
+  description String
+  category    String
+  condition   String
+  brand       String?
+  model       String?
+  price       String
+  currency    String        @default("ETH")
+  imageUrl    String?
+  nftTokenId  String?
+  status      ProductStatus @default(DRAFT)
+  sellerId    String
+  seller      User          @relation("SellerProducts", fields: [sellerId], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("products")
+}

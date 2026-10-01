@@ -1,4 +1,7 @@
+"use client";
+
 import React from "react";
+import { useTranslation } from "../contexts/LanguageContext";
 
 export type EscrowMilestone = "PAID" | "SHIPPED" | "DELIVERED" | "COMPLETED";
 
@@ -7,11 +10,13 @@ export interface EscrowTimelineProps {
 }
 
 export const EscrowTimeline: React.FC<EscrowTimelineProps> = ({ currentStatus }) => {
+  const { t } = useTranslation();
+
   const steps = [
-    { key: "PAID", label: "Payment Escrowed", desc: "Funds locked in smart contract" },
-    { key: "SHIPPED", label: "Item Shipped", desc: "Carrier tracking active" },
-    { key: "DELIVERED", label: "Delivery Confirmed", desc: "Physical parcel received" },
-    { key: "COMPLETED", label: "Payment Released", desc: "NFT & funds settled" },
+    { key: "PAID", label: t("escrow.paid"), desc: t("escrow.paidDesc") },
+    { key: "SHIPPED", label: t("escrow.shipped"), desc: t("escrow.shippedDesc") },
+    { key: "DELIVERED", label: t("escrow.delivered"), desc: t("escrow.deliveredDesc") },
+    { key: "COMPLETED", label: t("escrow.completed"), desc: t("escrow.completedDesc") },
   ];
 
   const getStepIndex = (status: EscrowMilestone) => {
@@ -29,10 +34,7 @@ export const EscrowTimeline: React.FC<EscrowTimelineProps> = ({ currentStatus })
   return (
     <div className="w-full py-6">
       <div className="flex items-center justify-between relative">
-        {/* Progress Bar Background */}
         <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-200 -translate-y-1/2 z-0" />
-        
-        {/* Active Progress Bar */}
         <div
           className="absolute top-1/2 left-0 h-1 bg-blue-600 -translate-y-1/2 z-0 transition-all duration-500"
           style={{ width: `${(currentIndex / (steps.length - 1)) * 100}%` }}
@@ -66,4 +68,3 @@ export const EscrowTimeline: React.FC<EscrowTimelineProps> = ({ currentStatus })
     </div>
   );
 };
-
