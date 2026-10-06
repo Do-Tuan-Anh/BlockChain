@@ -1,5 +1,8 @@
 # AegisMed: Decentralized Pharmaceutical Cold-Chain Provenance & Dynamic NFT Protocol
 
+Chạy giao diện chợ sản phẩm với Docker Desktop: [Hướng dẫn local](docs/MARKETPLACE_LOCAL.md).
+Đăng nhập, đăng ký, email xác thực và Google/Facebook: [Cấu hình tài khoản](docs/AUTH_SETUP.md).
+
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.24-363636?logo=solidity)](https://soliditylang.org/)
 [![Hardhat](https://img.shields.io/badge/Framework-Hardhat-yellow)](https://hardhat.org/)
 [![OpenZeppelin](https://img.shields.io/badge/Contracts-OpenZeppelin%20v5-blue)](https://openzeppelin.com/contracts/)

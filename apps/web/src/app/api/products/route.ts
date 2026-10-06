@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { Prisma, ProductStatus } from '@prisma/client';
+import { currentUser } from '@/lib/auth';
+import { authError, validOrigin } from '@/lib/auth-security';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
@@ -9,11 +14,19 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status');
     const sellerId = searchParams.get('sellerId');
 
-    const where: any = {};
+    const where: Prisma.ProductWhereInput = {};
     if (category && category !== 'All') where.category = category;
     if (condition && condition !== 'All') where.condition = condition;
-    if (status) where.status = status;
+    if (status && !Object.values(ProductStatus).includes(status as ProductStatus)) {
+      return NextResponse.json({ error: 'Invalid product status' }, { status: 400 });
+    }
     if (sellerId) where.sellerId = sellerId;
+    where.status = (status || 'LISTED') as ProductStatus;
+    if (status && !['LISTED', 'SOLD'].includes(status)) {
+      const viewer = await currentUser();
+      if (!viewer || (sellerId && sellerId !== viewer.id)) return NextResponse.json({ products: [] });
+      where.sellerId = viewer.id;
+    }
 
     const products = await prisma.product.findMany({
       where,
@@ -22,6 +35,7 @@ export async function GET(req: NextRequest) {
           select: {
             id: true,
             username: true,
+            name: true,
             walletAddress: true,
             avatarUrl: true,
             isVerified: true,
@@ -42,58 +56,40 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  if (!validOrigin(req)) return authError('INVALID_ORIGIN', 403);
+  const seller = await currentUser();
+  if (!seller) return authError('UNAUTHORIZED', 401);
   try {
     const body = await req.json();
-    const { title, description, category, condition, brand, model, price, currency, imageUrl, nftTokenId, sellerId } = body;
-    const { title, description, category, condition, brand, model, price, currency, imageUrl, nftTokenId, sellerWallet, sellerUsername } = body;
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Invalid product data' }, { status: 400 });
+    }
+    const { title, description, category, condition, brand, model, price, currency, imageUrl } = body;
 
-    if (!title || !description || !category || !condition || !price || !sellerId) {
-    if (!title || !description || !category || !condition || !price) {
+    if ([title, description, category, condition].some(value => typeof value !== 'string' || !value.trim()) ||
+        !['string', 'number'].includes(typeof price) || !Number.isFinite(Number(price)) || Number(price) <= 0) {
       return NextResponse.json(
-        { error: 'Missing required fields: title, description, category, condition, price, sellerId' },
-        { error: 'Missing required fields: title, description, category, condition, price' },
+        { error: 'Title, description, category, condition and a positive price are required' },
         { status: 400 }
       );
     }
-
-    const seller = await prisma.user.findUnique({ where: { id: sellerId } });
-    // Find or auto-create the seller user
-    const walletAddress = sellerWallet || '0x70997970C51812dc3A010C7d01b50e0d17dc79C8';
-    const username = sellerUsername || 'demo_seller';
-
-    let seller = await prisma.user.findUnique({
-      where: { walletAddress },
-    });
-
-    if (!seller) {
-      return NextResponse.json(
-        { error: 'Seller not found' },
-        { status: 404 }
-      );
-      // Auto-create seller for demo purposes
-      seller = await prisma.user.create({
-        data: {
-          walletAddress,
-          username,
-          role: 'SELLER',
-        },
-      });
+    if ([brand, model, currency, imageUrl]
+        .some(value => value != null && typeof value !== 'string')) {
+      return NextResponse.json({ error: 'Invalid field type' }, { status: 400 });
     }
 
     const product = await prisma.product.create({
       data: {
-        title,
-        description,
+        title: title.trim(),
+        description: description.trim(),
         category,
         condition,
         brand: brand || null,
         model: model || null,
-        price,
+        price: String(price).trim(),
         currency: currency || 'ETH',
         imageUrl: imageUrl || null,
-        nftTokenId: nftTokenId || null,
         status: 'LISTED',
-        sellerId,
         sellerId: seller.id,
       },
       include: {
@@ -101,6 +97,7 @@ export async function POST(req: NextRequest) {
           select: {
             id: true,
             username: true,
+            name: true,
             walletAddress: true,
           },
         },
@@ -110,6 +107,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ product }, { status: 201 });
   } catch (error) {
     console.error('Create product error:', error);
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return NextResponse.json({ error: 'Seller username already exists' }, { status: 409 });
+    }
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

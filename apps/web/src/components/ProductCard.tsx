@@ -12,7 +12,8 @@ export interface ProductCardProps {
   currency: string;
   imageUrl: string;
   sellerUsername: string;
-  sellerRating: string;
+  sellerId?: string;
+  sellerRating?: string;
   nftTokenId?: string;
 }
 
@@ -25,23 +26,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   currency,
   imageUrl,
   sellerUsername,
+  sellerId,
   sellerRating,
   nftTokenId,
 }) => {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition duration-200 flex flex-col">
       <div className="relative aspect-square w-full bg-gray-50 overflow-hidden group">
-        <img
+        {imageUrl ? <img
           src={imageUrl}
           alt={title}
           className="object-cover w-full h-full group-hover:scale-105 transition duration-300"
           onError={(e) => {
-            (e.target as HTMLImageElement).src =
-              "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80";
+            e.currentTarget.style.visibility = "hidden";
           }}
-        />
+        /> : <div className="w-full h-full flex items-center justify-center text-gray-400 text-4xl" aria-label={title}>□</div>}
         {nftTokenId && (
           <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm border border-blue-200 text-blue-700 text-xs font-semibold px-2.5 py-1 rounded-full flex items-center shadow-xs">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mr-1.5"></span>
@@ -61,24 +62,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <h3 className="font-semibold text-gray-900 line-clamp-1 text-base">{title}</h3>
           
           <div className="flex items-center text-xs text-gray-600 mt-2">
-            <span>{t("product.by")} <strong className="text-gray-900">{sellerUsername}</strong></span>
-            <span className="mx-1.5">•</span>
-            <span className="text-amber-600 font-medium">★ {sellerRating}</span>
+            <span>{t("product.by")} {sellerId ? <a href={`/${locale}/seller/${encodeURIComponent(sellerId)}`} className="font-semibold text-blue-600 hover:underline">{sellerUsername}</a> : <strong className="text-gray-900">{sellerUsername}</strong>}</span>
+            {sellerRating && <span className="text-amber-600 font-medium ml-2">★ {sellerRating}</span>}
           </div>
         </div>
 
-        <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+        <div className="mt-4 pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3">
           <div>
             <span className="text-xs text-gray-500 block">{t("product.price")}</span>
-            <span className="text-lg font-bold text-gray-900">
+            <span className="whitespace-nowrap text-lg font-bold text-gray-900">
               {price} <span className="text-sm font-medium text-gray-600">{currency}</span>
             </span>
           </div>
           <a
-            href={`/product/${id}`}
+            href={`/${locale}/product/${encodeURIComponent(id)}`}
             className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
           >
-            {t("product.buyNow")}
+            {t("createListing.viewProduct")}
           </a>
         </div>
       </div>

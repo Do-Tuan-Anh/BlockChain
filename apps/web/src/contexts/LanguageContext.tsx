@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import en from "../locales/en.json";
 import vi from "../locales/vi.json";
 
@@ -21,11 +22,33 @@ const LanguageContext = createContext<LanguageContextType>({
 });
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("en");
+  const pathname = usePathname();
+  
+  // Get initial locale from URL if available, fallback to 'en'
+  const getInitialLocale = (): Locale => {
+    if (!pathname) return "en";
+    const segments = pathname.split("/");
+    if (segments[1] === "vi") return "vi";
+    if (segments[1] === "en") return "en";
+    return "en";
+  };
+
+  const [locale, setLocaleState] = useState<Locale>(getInitialLocale);
+
+  // Still update if URL changes and we didn't catch it in state
+  useEffect(() => {
+    const urlLocale = getInitialLocale();
+    if (urlLocale !== locale) {
+      setLocaleState(urlLocale);
+    }
+  }, [pathname]);
+
+  useEffect(() => { document.documentElement.lang = locale; }, [locale]);
 
   useEffect(() => {
     const saved = localStorage.getItem("trustchain-locale") as Locale;
-    if (saved && (saved === "en" || saved === "vi")) {
+    if (saved && (saved === "en" || saved === "vi") && pathname === "/") {
+      // Only auto-restore from localstorage if we are at the root
       setLocaleState(saved);
     }
   }, []);
@@ -59,3 +82,4 @@ export function useTranslation() {
 }
 
 export default LanguageContext;
+

@@ -4,6 +4,7 @@
   "description": "AegisMed: Decentralized Pharmaceutical Cold-Chain Provenance & Dynamic NFT Digital Product Passport Protocol",
   "main": "index.js",
   "scripts": {
+    "dev:marketplace": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-marketplace.ps1",
     "compile": "hardhat compile",
     "test": "hardhat test",
     "node": "hardhat node",

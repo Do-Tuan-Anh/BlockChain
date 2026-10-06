@@ -1,25 +1,48 @@
-"use client";
+'use client';
+import React, { Suspense } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { useTranslation, Locale } from '../contexts/LanguageContext';
 
-import React from "react";
-import { useTranslation, Locale } from "../contexts/LanguageContext";
+export const LanguageSwitcher: React.FC = () => <Suspense fallback={<span className="text-xs text-gray-400">English / Tiếng Việt</span>}><LanguageLinks /></Suspense>;
 
-export const LanguageSwitcher: React.FC = () => {
-  const { locale, setLocale } = useTranslation();
+function LanguageLinks() {
+  const { locale } = useTranslation();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const toggleLocale = () => {
-    setLocale(locale === "en" ? "vi" : "en");
+  const localeHref = (newLocale: Locale) => {
+    // Replace the locale segment in the current path
+    // pathname is like /vi/explore or /en/orders/1
+    const segments = pathname.split('/');
+    // segments[0] = '', segments[1] = locale, rest is the path
+    if (segments[1] === 'en' || segments[1] === 'vi') {
+      segments[1] = newLocale;
+    } else {
+      segments.splice(1, 0, newLocale);
+    }
+    const query = searchParams.toString();
+    return (segments.join('/') || '/' + newLocale) + (query ? `?${query}` : '');
   };
 
   return (
-    <button
-      onClick={toggleLocale}
-      className="flex items-center space-x-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-sm font-medium px-3 py-1.5 rounded-lg transition"
-      title={locale === "en" ? "Chuyển sang Tiếng Việt" : "Switch to English"}
-    >
-      <span className="text-base">{locale === "en" ? "🇬🇧" : "🇻🇳"}</span>
-      <span className="text-xs font-semibold text-gray-700">
-        {locale === "en" ? "EN" : "VI"}
-      </span>
-    </button>
+    <div className="flex items-center space-x-1 text-xs text-gray-400">
+      <a
+        href={localeHref('en')}
+        hrefLang="en"
+        aria-current={locale === 'en' ? 'page' : undefined}
+        className={locale === 'en' ? 'text-gray-700 font-semibold' : 'hover:text-gray-600 transition'}
+      >
+        English
+      </a>
+      <span>/</span>
+      <a
+        href={localeHref('vi')}
+        hrefLang="vi"
+        aria-current={locale === 'vi' ? 'page' : undefined}
+        className={locale === 'vi' ? 'text-gray-700 font-semibold' : 'hover:text-gray-600 transition'}
+      >
+        Tiếng Việt
+      </a>
+    </div>
   );
 };
