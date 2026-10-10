@@ -66,28 +66,28 @@ export default function ProductVerificationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-inset py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-8">
         
         {/* Verification Hero Badge */}
-        <div className="bg-white rounded-2xl border border-emerald-200 p-6 sm:p-8 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 bg-emerald-500 text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+        <div className="bg-surface rounded-2xl border border-positive/25 p-6 pt-14 sm:p-8 sm:pt-14 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 bg-emerald-700 text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
             <ShieldCheck className="w-4 h-4" />
             Verified On-Chain
           </div>
 
           <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
-            <div className="w-24 h-24 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
+            <div className="w-24 h-24 rounded-xl overflow-hidden bg-elevated border border-line shrink-0">
               <img src={product.image} alt={product.title} className="w-full h-full object-cover" />
             </div>
             <div className="space-y-1">
-              <div className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
+              <div className="inline-flex items-center gap-2 text-xs font-semibold text-positive bg-positive/10 px-2.5 py-1 rounded-full">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 Valid Digital Product Passport
               </div>
-              <h1 className="text-2xl font-bold text-slate-900">{product.title}</h1>
-              <p className="text-sm text-slate-500">
-                Token ID: <span className="font-mono font-medium text-slate-800">#{product.tokenId}</span> • Brand: {product.brand} • Network: {product.network}
+              <h1 className="text-2xl font-bold text-ink">{product.title}</h1>
+              <p className="text-sm text-muted">
+                Token ID: <span className="font-mono font-medium text-ink">#{product.tokenId}</span> • Brand: {product.brand} • Network: {product.network}
               </p>
             </div>
           </div>
@@ -97,44 +97,44 @@ export default function ProductVerificationPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
           {/* Column 1: On-Chain Passport Specs */}
-          <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4 shadow-sm">
-            <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
-              <QrCode className="w-4 h-4 text-blue-600" />
+          <div className="bg-surface rounded-xl border border-line p-6 space-y-4 shadow-sm">
+            <h2 className="text-base font-semibold text-ink flex items-center gap-2">
+              <QrCode className="w-4 h-4 text-accent-soft" />
               Digital Passport Specifications
             </h2>
 
             <div className="space-y-3 text-xs">
               <div>
-                <span className="text-slate-500 block">Current Registered Owner</span>
-                <div className="flex items-center justify-between font-mono bg-slate-50 p-2 rounded border border-slate-200 mt-1">
-                  <span className="text-slate-800 truncate">{product.currentOwner}</span>
-                  <button onClick={() => copyToClipboard(product.currentOwner)} className="text-blue-600 hover:text-blue-700 ml-2">
+                <span className="text-muted block">Current Registered Owner</span>
+                <div className="flex items-center justify-between font-mono bg-inset p-2 rounded border border-line mt-1">
+                  <span className="text-ink truncate">{product.currentOwner}</span>
+                  <button aria-label="Copy current owner address" onClick={() => copyToClipboard(product.currentOwner)} className="shrink-0 text-accent-soft hover:text-ink ml-2">
                     {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                   </button>
                 </div>
               </div>
 
               <div>
-                <span className="text-slate-500 block">Smart Contract Address</span>
-                <div className="font-mono bg-slate-50 p-2 rounded border border-slate-200 mt-1 text-slate-800 truncate">
+                <span className="text-muted block">Smart Contract Address</span>
+                <div className="font-mono bg-inset p-2 rounded border border-line mt-1 text-ink truncate">
                   {product.contractAddress}
                 </div>
               </div>
 
               <div>
-                <span className="text-slate-500 block">Immutable Hardware Serial Hash (Keccak-256)</span>
-                <div className="font-mono bg-slate-50 p-2 rounded border border-slate-200 mt-1 text-slate-700 truncate">
+                <span className="text-muted block">Immutable Hardware Serial Hash (Keccak-256)</span>
+                <div className="font-mono bg-inset p-2 rounded border border-line mt-1 text-secondary truncate">
                   {product.hardwareHash}
                 </div>
               </div>
 
               <div>
-                <span className="text-slate-500 block">Decentralized IPFS Metadata</span>
+                <span className="text-muted block">Decentralized IPFS Metadata</span>
                 <a
                   href={`https://gateway.pinata.cloud/ipfs/${product.metadataUri.replace("ipfs://", "")}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-blue-600 hover:underline mt-1 font-mono text-xs"
+                  className="inline-flex max-w-full items-center gap-1.5 break-all text-accent-soft hover:underline mt-1 font-mono text-xs"
                 >
                   {product.metadataUri.slice(0, 38)}...
                   <ExternalLink className="w-3 h-3" />
@@ -144,20 +144,20 @@ export default function ProductVerificationPage() {
           </div>
 
           {/* Column 2: Verifiability Disclaimer & Educational Notice */}
-          <div className="bg-blue-50/50 rounded-xl border border-blue-200 p-6 space-y-4">
-            <h2 className="text-base font-semibold text-blue-950 flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-blue-600" />
+          <div className="bg-accent/10 rounded-xl border border-accent/30 p-6 space-y-4">
+            <h2 className="text-base font-semibold text-accent-soft flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-accent-soft" />
               What is Verified by Blockchain?
             </h2>
 
-            <div className="space-y-3 text-xs text-blue-900 leading-relaxed">
+            <div className="space-y-3 text-xs text-accent-soft leading-relaxed">
               <p>
                 <strong>✓ Digital Ownership Title:</strong> Proves mathematically that the current wallet address purchased and received this specific token through TrustChain's verified escrow protocol.
               </p>
               <p>
                 <strong>✓ Unalterable Provenance Trail:</strong> Past sale prices, transfer dates, and previous owners cannot be erased, faked, or manipulated by any third party or centralized admin.
               </p>
-              <p className="pt-2 border-t border-blue-200 text-blue-800">
+              <p className="pt-2 border-t border-accent/30 text-accent-soft">
                 <strong>Notice:</strong> An NFT confirms ownership of the cryptographic record. Physical item authenticity is attested by the seller and verified by the buyer prior to final on-chain delivery release.
               </p>
             </div>
@@ -166,34 +166,34 @@ export default function ProductVerificationPage() {
         </div>
 
         {/* Chronological Provenance History Timeline */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8 space-y-6 shadow-sm">
+        <div className="bg-surface rounded-xl border border-line p-6 sm:p-8 space-y-6 shadow-sm">
           <div>
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-indigo-600" />
+            <h2 className="text-lg font-bold text-ink flex items-center gap-2">
+              <Clock className="w-5 h-5 text-accent-soft" />
               Immutable Provenance & Chain of Custody
             </h2>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-muted mt-1">
               Every lifecycle event is permanently recorded on Base Sepolia and cryptographically linked.
             </p>
           </div>
 
-          <div className="relative border-l-2 border-slate-200 ml-4 space-y-8 pl-6">
+          <div className="relative border-l-2 border-line ml-4 space-y-8 pl-6">
             {product.provenance.map((step, index) => (
               <div key={index} className="relative group">
-                <div className="absolute -left-[31px] top-1.5 w-3.5 h-3.5 rounded-full bg-blue-600 border-2 border-white ring-4 ring-blue-50" />
+                <div className="absolute -left-[31px] top-1.5 w-3.5 h-3.5 rounded-full bg-primary border-2 border-white ring-4 ring-accent/15" />
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-sm font-semibold text-slate-900">{step.title}</h3>
-                    <span className="text-[11px] text-slate-400 font-mono">{step.date}</span>
+                    <h3 className="text-sm font-semibold text-ink">{step.title}</h3>
+                    <span className="text-[11px] text-muted font-mono">{step.date}</span>
                   </div>
-                  <p className="text-xs text-slate-600 leading-normal">{step.description}</p>
-                  <div className="flex items-center gap-4 text-[11px] font-mono text-slate-500 pt-1">
+                  <p className="text-xs text-secondary leading-normal">{step.description}</p>
+                  <div className="flex flex-wrap items-center gap-4 text-[11px] font-mono text-muted pt-1">
                     <span>Actor: {step.actor}</span>
                     <a
                       href={`https://sepolia.basescan.org/tx/${step.txHash}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-blue-600 hover:underline inline-flex items-center gap-1"
+                      className="text-accent-soft hover:underline inline-flex items-center gap-1"
                     >
                       Basescan <ExternalLink className="w-2.5 h-2.5" />
                     </a>
@@ -208,7 +208,7 @@ export default function ProductVerificationPage() {
         <div className="text-center pt-2">
           <Link
             href={`/product/prod-001`}
-            className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition"
+            className="inline-flex items-center gap-2 text-sm font-medium text-secondary hover:text-ink transition"
           >
             ← Back to Product Marketplace Listing
           </Link>

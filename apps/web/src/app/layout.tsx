@@ -16,11 +16,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="bg-gray-50 text-gray-900 min-h-screen flex flex-col font-sans antialiased">
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: "try{document.documentElement.dataset.theme=localStorage.getItem('trustchain-theme')==='light'?'light':'dark'}catch(e){}" }} />
+      </head>
+      <body className="min-h-screen flex flex-col font-sans antialiased">
         <Providers>
           <ClientNavbar />
-          <main className="flex-1">{children}</main>
+          <main id="main-content" className="flex-1 min-w-0">{children}</main>
           <ClientFooter />
         </Providers>
       </body>

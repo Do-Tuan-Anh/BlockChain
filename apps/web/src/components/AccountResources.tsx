@@ -8,16 +8,16 @@ export function AccountSettings() {
   const { locale } = useTranslation();
   const vi = locale === 'vi';
   return <div className="mx-auto max-w-3xl space-y-6 px-4 py-10 sm:px-6">
-    <h1 className="text-3xl font-bold">{vi ? 'Cài đặt' : 'Settings'}</h1>
-    <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6">
+    <div className="page-heading"><p className="eyebrow">YOUR PREFERENCES</p><h1 className="text-3xl font-bold">{vi ? 'Cài đặt' : 'Settings'}</h1></div>
+    <section className="space-y-4 rounded-2xl border border-line bg-surface p-6">
       <h2 className="flex items-center gap-2 font-semibold"><Globe size={20} />{vi ? 'Ngôn ngữ hiển thị' : 'Display language'}</h2>
-      <p className="text-sm text-slate-500">{vi ? 'Chọn ngôn ngữ bạn muốn sử dụng trên ứng dụng.' : 'Choose your preferred language for the app.'}</p>
+      <p className="text-sm text-muted">{vi ? 'Chọn ngôn ngữ bạn muốn sử dụng trên ứng dụng.' : 'Choose your preferred language for the app.'}</p>
       <LanguageSwitcher />
     </section>
-    <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6">
+    <section className="space-y-4 rounded-2xl border border-line bg-surface p-6">
       <h2 className="flex items-center gap-2 font-semibold"><LockKeyhole size={20} />{vi ? 'Bảo mật tài khoản' : 'Account security'}</h2>
-      <p className="text-sm leading-6 text-slate-500">{vi ? 'Để đặt lại mật khẩu, yêu cầu liên kết gửi đến email đăng ký. Nếu đăng nhập bằng Google hoặc Facebook, bạn quản lý mật khẩu tại nhà cung cấp đó.' : 'Request a link at your registered email to reset your password. For Google or Facebook sign-in, manage your password with that provider.'}</p>
-      <a href={`/${locale}/forgot-password`} className="inline-block rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800">{vi ? 'Đặt lại mật khẩu' : 'Reset password'}</a>
+      <p className="text-sm leading-6 text-muted">{vi ? 'Để đặt lại mật khẩu, yêu cầu liên kết gửi đến email đăng ký. Nếu đăng nhập bằng Google hoặc Facebook, bạn quản lý mật khẩu tại nhà cung cấp đó.' : 'Request a link at your registered email to reset your password. For Google or Facebook sign-in, manage your password with that provider.'}</p>
+      <a href={`/${locale}/forgot-password`} className="btn-primary">{vi ? 'Đặt lại mật khẩu' : 'Reset password'}</a>
     </section>
   </div>;
 }
@@ -32,7 +32,7 @@ export function AccountHelp() {
     { title: vi ? 'Email xác thực và quên mật khẩu' : 'Verification and password recovery', text: vi ? 'Sau khi đăng ký, mở email và bấm liên kết xác thực. Nếu quên mật khẩu, dùng email đăng ký để yêu cầu liên kết đặt lại mật khẩu.' : 'After registering, open your email and follow the verification link. If you forget your password, request a reset link using your registered email.', href: 'forgot-password', action: vi ? 'Khôi phục mật khẩu' : 'Recover password' },
   ];
   return <div className="mx-auto max-w-3xl space-y-6 px-4 py-10 sm:px-6">
-    <div><BookOpen className="mb-3 text-blue-600" size={28} /><h1 className="text-3xl font-bold">{vi ? 'Hướng dẫn' : 'Help'}</h1><p className="mt-2 text-sm text-slate-500">{vi ? 'Bắt đầu với tài khoản và shop của bạn.' : 'Get started with your account and shop.'}</p></div>
-    {guides.map((guide, index) => <section key={guide.href + index} className="space-y-3 rounded-2xl border border-slate-200 bg-white p-6"><h2 className="font-semibold">{index + 1}. {guide.title}</h2><p className="text-sm leading-7 text-slate-600">{guide.text}</p><a href={`/${locale}/${guide.href}`} className="inline-block text-sm font-semibold text-blue-600 hover:underline">{guide.action} →</a></section>)}
+    <div><BookOpen className="mb-3 text-accent-soft" size={28} /><h1 className="text-3xl font-bold">{vi ? 'Hướng dẫn' : 'Help'}</h1><p className="mt-2 text-sm text-muted">{vi ? 'Bắt đầu với tài khoản và shop của bạn.' : 'Get started with your account and shop.'}</p></div>
+    {guides.map((guide, index) => <section key={guide.href + index} className="space-y-3 rounded-2xl border border-line bg-surface p-6"><h2 className="font-semibold">{index + 1}. {guide.title}</h2><p className="text-sm leading-7 text-secondary">{guide.text}</p><a href={`/${locale}/${guide.href}`} className="inline-block text-sm font-semibold text-accent-soft hover:underline">{guide.action} →</a></section>)}
   </div>;
 }

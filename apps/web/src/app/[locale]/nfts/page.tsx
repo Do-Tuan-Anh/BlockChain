@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Layers3 } from 'lucide-react';
 import { useTranslation } from "../../../contexts/LanguageContext";
 
 export default function UserNFTVaultPage() {
@@ -29,60 +30,61 @@ export default function UserNFTVaultPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      <div>
-        <h1 className="text-3xl font-extrabold text-gray-900">{t("nfts.title")}</h1>
-        <p className="text-sm text-gray-500 mt-1">{t("nfts.subtitle")}</p>
+      <div className="page-heading">
+        <p className="eyebrow"><Layers3 size={15} />DIGITAL PASSPORTS</p>
+        <h1 className="text-3xl font-extrabold text-ink">{t("nfts.title")}</h1>
+        <p className="text-sm text-muted mt-1">{t("nfts.subtitle")}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {ownedNFTs.map((item) => (
           <div
             key={item.tokenId}
-            className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-xs space-y-4"
+            className="product-card space-y-4"
           >
-            <div className="aspect-square bg-gray-100 overflow-hidden relative">
+            <div className="product-media">
               <img
                 src={item.imageUrl}
                 alt={item.title}
                 className="w-full h-full object-cover"
               />
-              <span className="absolute top-3 right-3 bg-white/90 backdrop-blur-xs border border-blue-200 text-blue-700 text-xs font-semibold px-2.5 py-1 rounded-full">
+              <span className="absolute top-3 right-3 bg-surface/90 backdrop-blur-xs border border-accent/30 text-accent-soft text-xs font-semibold px-2.5 py-1 rounded-full">
                 NFT #{item.tokenId}
               </span>
             </div>
 
             <div className="p-5 space-y-4">
               <div>
-                <span className="text-xs text-gray-400 block font-medium uppercase">{item.category}</span>
-                <h3 className="text-base font-bold text-gray-900">{item.title}</h3>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <span className="text-xs text-muted block font-medium uppercase">{item.category}</span>
+                <h3 className="text-base font-bold text-ink">{item.title}</h3>
+                <p className="text-xs text-muted mt-0.5">
                   {t("nfts.deliveredOn")} {item.acquiredDate} {t("nfts.viaOrder")} #{item.orderId}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs">
                 {item.attributes.map((a) => (
-                  <div key={a.trait} className="bg-gray-50 p-2 rounded-lg border border-gray-100">
-                    <span className="text-gray-400 block text-[10px] uppercase font-semibold">{a.trait}</span>
-                    <strong className="text-gray-900">{a.value}</strong>
+                  <div key={a.trait} className="bg-inset p-2 rounded-lg border border-line">
+                    <span className="text-muted block text-[10px] uppercase font-semibold">{a.trait}</span>
+                    <strong className="text-ink">{a.value}</strong>
                   </div>
                 ))}
               </div>
 
-              <div className="pt-3 border-t border-gray-100 space-y-1 text-xs text-gray-500">
+              <div className="pt-3 border-t border-line space-y-1 text-xs text-muted">
                 <div className="flex justify-between">
                   <span>{t("nfts.contract")}</span>
-                  <span className="font-mono text-gray-800 truncate max-w-[150px]">{item.contractAddress}</span>
+                  <span className="font-mono text-ink truncate max-w-[150px]">{item.contractAddress}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>{t("nfts.productHash")}</span>
-                  <span className="font-mono text-gray-800 truncate max-w-[150px]">{item.productHash}</span>
+                  <span className="font-mono text-ink truncate max-w-[150px]">{item.productHash}</span>
                 </div>
               </div>
 
               <a
                 href={`/${locale}/orders/${item.orderId}`}
-                className="block text-center w-full bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-semibold py-2.5 rounded-xl transition"
+                className="block text-center w-full bg-elevated hover:bg-line text-ink text-xs font-semibold py-2.5 rounded-xl transition"
               >
                 {t("nfts.viewOrder")}
               </a>

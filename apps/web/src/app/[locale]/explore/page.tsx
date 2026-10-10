@@ -1,11 +1,19 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { Suspense, useState, useEffect } from "react";
+import { useSearchParams } from 'next/navigation';
+import { Compass, PackageSearch, Search, SlidersHorizontal } from 'lucide-react';
 import { ProductCard } from "../../../components/ProductCard";
 import { useTranslation } from "../../../contexts/LanguageContext";
 
 export default function ExplorePage() {
+  return <Suspense fallback={<div className="page-shell" aria-busy="true">TrustChain…</div>}><ExploreCatalog /></Suspense>;
+}
+
+function ExploreCatalog() {
   const { t } = useTranslation();
+  const searchParams = useSearchParams();
+  const searchTerm = searchParams.get('q') || '';
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedCondition, setSelectedCondition] = useState("All");
   const [products, setProducts] = useState<any[]>([]);
@@ -34,25 +42,37 @@ export default function ExplorePage() {
     return () => controller.abort();
   }, [selectedCategory, selectedCondition]);
 
+  // Search only the products returned by the existing filters; no API/data changes.
+  const visibleProducts = products.filter(product => [product.title, product.brand, product.model, product.category, product.nftTokenId].some(value => String(value || '').toLocaleLowerCase().includes(searchTerm.trim().toLocaleLowerCase())));
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      <div>
-        <h1 className="text-3xl font-extrabold text-gray-900">{t("explore.title")}</h1>
-        <p className="text-sm text-gray-500 mt-1">{t("explore.subtitle")}</p>
+    <div className="page-shell space-y-8">
+      <div className="page-heading">
+        <p className="eyebrow"><Compass size={15} aria-hidden="true" />THE MARKETPLACE</p>
+        <h1 className="text-3xl font-extrabold text-ink">{t("explore.title")}</h1>
+        <p className="text-sm text-muted mt-1">{t("explore.subtitle")}</p>
       </div>
 
+      <form role="search" className="relative max-w-xl">
+        <Search size={19} className="pointer-events-none absolute left-4 top-4 text-muted" aria-hidden="true" />
+        <input key={searchTerm} name="q" type="search" defaultValue={searchTerm} aria-label={t('nav.searchPlaceholder')} placeholder={t('nav.searchPlaceholder')} className="w-full !min-h-14 border py-3 pl-12 pr-16 text-sm" />
+        <button type="submit" aria-label={t('nav.explore')} className="absolute right-2 top-2 flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white hover:bg-primary-hover"><Search size={17} aria-hidden="true" /></button>
+      </form>
+
       {/* Filter Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-200">
-        <div className="flex items-center space-x-2 overflow-x-auto pb-1 sm:pb-0">
-          <span className="text-xs font-semibold text-gray-500 uppercase mr-1">{t("explore.category")}</span>
+      <div className="glass-panel flex flex-col gap-5 p-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-2 text-xs font-semibold text-muted mr-2"><SlidersHorizontal size={15} />{t("explore.category")}</span>
           {categoryKeys.map((cat) => (
             <button
               key={cat}
+              type="button"
+              aria-pressed={selectedCategory === cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`text-xs px-3 py-1.5 rounded-full font-medium transition ${
+              className={`min-h-10 text-xs px-4 py-2 rounded-xl font-medium transition ${
                 selectedCategory === cat
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-primary text-white"
+                  : "bg-elevated text-secondary hover:bg-line"
               }`}
             >
               {t(`categories.${cat}`)}
@@ -60,12 +80,13 @@ export default function ExplorePage() {
           ))}
         </div>
 
-        <div className="flex items-center space-x-2">
-          <span className="text-xs font-semibold text-gray-500 uppercase mr-1">{t("explore.condition")}</span>
+        <div className="flex flex-wrap items-center gap-3 border-t border-line pt-4">
+          <label htmlFor="product-condition" className="text-xs font-semibold text-muted">{t("explore.condition")}</label>
           <select
+            id="product-condition"
             value={selectedCondition}
             onChange={(e) => setSelectedCondition(e.target.value)}
-            className="text-xs bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-500"
+            className="text-xs bg-inset border border-line rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-accent/30"
           >
             {conditionKeys.map((cond) => (
               <option key={cond} value={cond}>
@@ -77,13 +98,13 @@ export default function ExplorePage() {
       </div>
 
       {/* Product Grid */}
-      {error ? (<p role="alert" className="text-red-600">{t("common.error")}</p>) : loading ? (
+      {error ? (<p role="alert" className="text-danger">{t("common.error")}</p>) : loading ? (
         <div className="text-center py-16">
-          <p className="text-gray-500 text-sm">{t("common.loading")}</p>
+          <p className="text-muted text-sm">{t("common.loading")}</p>
         </div>
-      ) : products.length > 0 ? (
+      ) : visibleProducts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {products.map((prod) => (
+          {visibleProducts.map((prod) => (
             <ProductCard
               key={prod.id}
               id={prod.id}
@@ -100,8 +121,9 @@ export default function ExplorePage() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
-          <p className="text-gray-500 text-sm">{t("explore.noProducts")}</p>
+        <div className="empty-state">
+          <PackageSearch size={36} strokeWidth={1.4} className="mx-auto mb-5 text-accent-soft" aria-hidden="true" />
+          <p className="text-muted text-sm">{t("explore.noProducts")}</p>
         </div>
       )}
     </div>

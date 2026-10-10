@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import { ArrowUpRight, Package } from 'lucide-react';
 import { useTranslation } from "../contexts/LanguageContext";
 
 export interface ProductCardProps {
@@ -31,54 +32,53 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   nftTokenId,
 }) => {
   const { t, locale } = useTranslation();
+  const [failedImage, setFailedImage] = useState<string | null>(null);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition duration-200 flex flex-col">
-      <div className="relative aspect-square w-full bg-gray-50 overflow-hidden group">
-        {imageUrl ? <img
+    <div className="product-card">
+      <div className="product-media group">
+        {imageUrl && failedImage !== imageUrl ? <img
           src={imageUrl}
           alt={title}
-          className="object-cover w-full h-full group-hover:scale-105 transition duration-300"
-          onError={(e) => {
-            e.currentTarget.style.visibility = "hidden";
-          }}
-        /> : <div className="w-full h-full flex items-center justify-center text-gray-400 text-4xl" aria-label={title}>□</div>}
+          className="object-cover w-full h-full"
+          onError={() => setFailedImage(imageUrl)}
+        /> : <div className="product-placeholder" aria-label={title}><Package size={48} strokeWidth={1} /></div>}
         {nftTokenId && (
-          <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm border border-blue-200 text-blue-700 text-xs font-semibold px-2.5 py-1 rounded-full flex items-center shadow-xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mr-1.5"></span>
+          <div className="absolute top-3 right-3 bg-surface/90 backdrop-blur-sm border border-accent/30 text-accent-soft text-xs font-semibold px-2.5 py-1 rounded-full flex items-center shadow-xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary mr-1.5"></span>
             NFT #{nftTokenId}
           </div>
         )}
       </div>
 
-      <div className="p-4 flex-1 flex flex-col justify-between">
+      <div className="p-5 flex-1 flex flex-col justify-between gap-2">
         <div>
-          <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted mb-3">
             <span>{t(`categories.${category}`) !== `categories.${category}` ? t(`categories.${category}`) : category}</span>
-            <span className="bg-gray-100 px-2 py-0.5 rounded text-gray-700 font-medium">
+            <span className="bg-elevated px-2 py-0.5 rounded text-secondary font-medium">
               {t(`conditions.${condition}`) !== `conditions.${condition}` ? t(`conditions.${condition}`) : condition}
             </span>
           </div>
-          <h3 className="font-semibold text-gray-900 line-clamp-1 text-base">{title}</h3>
+          <h3 className="font-semibold text-ink line-clamp-2 text-base leading-6" title={title}>{title}</h3>
           
-          <div className="flex items-center text-xs text-gray-600 mt-2">
-            <span>{t("product.by")} {sellerId ? <a href={`/${locale}/seller/${encodeURIComponent(sellerId)}`} className="font-semibold text-blue-600 hover:underline">{sellerUsername}</a> : <strong className="text-gray-900">{sellerUsername}</strong>}</span>
-            {sellerRating && <span className="text-amber-600 font-medium ml-2">★ {sellerRating}</span>}
+          <div className="flex items-center text-xs text-secondary mt-2">
+            <span>{t("product.by")} {sellerId ? <a href={`/${locale}/seller/${encodeURIComponent(sellerId)}`} className="font-semibold text-accent-soft hover:underline">{sellerUsername}</a> : <strong className="text-ink">{sellerUsername}</strong>}</span>
+            {sellerRating && <span className="text-warning font-medium ml-2">★ {sellerRating}</span>}
           </div>
         </div>
 
-        <div className="mt-4 pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3">
+        <div className="mt-4 pt-4 border-t border-line flex flex-wrap items-center justify-between gap-3">
           <div>
-            <span className="text-xs text-gray-500 block">{t("product.price")}</span>
-            <span className="whitespace-nowrap text-lg font-bold text-gray-900">
-              {price} <span className="text-sm font-medium text-gray-600">{currency}</span>
+            <span className="text-xs text-muted block">{t("product.price")}</span>
+            <span className="break-all text-xl font-bold tracking-tight text-ink">
+              {price} <span className="text-sm font-medium text-secondary">{currency}</span>
             </span>
           </div>
           <a
             href={`/${locale}/product/${encodeURIComponent(id)}`}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
+            className="inline-flex w-full items-center justify-between gap-2 rounded-xl border border-line bg-elevated px-3 py-3 text-xs font-semibold text-ink transition hover:border-accent/50 hover:text-accent-soft"
           >
-            {t("createListing.viewProduct")}
+            {t("createListing.viewProduct")}<ArrowUpRight size={16} aria-hidden="true" />
           </a>
         </div>
       </div>

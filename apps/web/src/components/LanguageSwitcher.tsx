@@ -3,9 +3,9 @@ import React, { Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useTranslation, Locale } from '../contexts/LanguageContext';
 
-export const LanguageSwitcher: React.FC = () => <Suspense fallback={<span className="text-xs text-gray-400">English / Tiếng Việt</span>}><LanguageLinks /></Suspense>;
+export const LanguageSwitcher = ({ inMenu = false }: { inMenu?: boolean }) => <Suspense fallback={<span className="text-xs text-muted">English / Tiếng Việt</span>}><LanguageLinks inMenu={inMenu} /></Suspense>;
 
-function LanguageLinks() {
+function LanguageLinks({ inMenu }: { inMenu: boolean }) {
   const { locale } = useTranslation();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -25,21 +25,27 @@ function LanguageLinks() {
   };
 
   return (
-    <div className="flex items-center space-x-1 text-xs text-gray-400">
+    <div role={inMenu ? 'group' : undefined} aria-label={inMenu ? (locale === 'vi' ? 'Ngôn ngữ' : 'Language') : undefined} className={inMenu ? 'preference-switch' : 'flex items-center space-x-1 text-xs text-muted'}>
       <a
         href={localeHref('en')}
         hrefLang="en"
+        role={inMenu ? 'menuitemradio' : undefined}
+        aria-checked={inMenu ? locale === 'en' : undefined}
+        tabIndex={inMenu ? -1 : undefined}
         aria-current={locale === 'en' ? 'page' : undefined}
-        className={locale === 'en' ? 'text-gray-700 font-semibold' : 'hover:text-gray-600 transition'}
+        className={locale === 'en' ? 'text-secondary font-semibold' : 'hover:text-secondary transition'}
       >
         English
       </a>
-      <span>/</span>
+      {!inMenu && <span>/</span>}
       <a
         href={localeHref('vi')}
         hrefLang="vi"
+        role={inMenu ? 'menuitemradio' : undefined}
+        aria-checked={inMenu ? locale === 'vi' : undefined}
+        tabIndex={inMenu ? -1 : undefined}
         aria-current={locale === 'vi' ? 'page' : undefined}
-        className={locale === 'vi' ? 'text-gray-700 font-semibold' : 'hover:text-gray-600 transition'}
+        className={locale === 'vi' ? 'text-secondary font-semibold' : 'hover:text-secondary transition'}
       >
         Tiếng Việt
       </a>
