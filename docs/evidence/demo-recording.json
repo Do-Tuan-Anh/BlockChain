@@ -1,0 +1,108 @@
+{
+  "recordedAt": "2026-10-12T03:55:33.631Z",
+  "environment": "Local Hardhat, automatic EIP-1193 test wallet; not MetaMask or public testnet",
+  "config": {
+    "network": "localhost",
+    "chainId": 31337,
+    "deploymentBlock": 1,
+    "deploymentBlockHash": "0x1a291245bbb5c6ad611c88986ffb1228d556473116c10631dc90945fab132d12",
+    "scope": "31337:0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9:0x1a291245bbb5c6ad611c88986ffb1228d556473116c10631dc90945fab132d12",
+    "deployedAt": "2026-10-12T03:32:15.674Z",
+    "contracts": {
+      "MarketplaceNFT": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "FeeManager": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+      "Escrow": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      "Marketplace": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+      "Reputation": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+      "DisputeResolution": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
+    },
+    "transactions": {
+      "MarketplaceNFT": "0x03cba4d7b0892647ce9f5b009aa046ca857e8ff679c52c8f75f62bbf1a8ace33",
+      "FeeManager": "0x120bd4e2e3b7e4ebee2b76c0d271aca7b2760e304345078ef351142a6bc36083",
+      "Escrow": "0x07e1df01d55fc7143f1c4427f95b035a4bdea0460807993ab2c99107a8f5ce15",
+      "Marketplace": "0x9b6f6fc389437c13ba5cb599b87c3020b4227be008471d6d913a592a894ad808",
+      "Reputation": "0x0bea8fb687cee84c61ffde829480f458dfe6a674626d43f82b7a2f6b5c959c5a",
+      "DisputeResolution": "0xb95f2fe18e3257ceb2548d9836c61f39a6e8b012239a0e1e9c68156561e00e1e"
+    },
+    "treasury": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "arbitrator": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+    "explorer": "",
+    "chainName": "TrustChain Local",
+    "confirmations": 0,
+    "walletRpcUrl": "http://127.0.0.1:8545",
+    "gateway": "http://localhost:8080/ipfs/"
+  },
+  "productId": "cmv4pvl8y002rmtpyvd8bdm7p",
+  "tokenId": "7",
+  "listingId": "6",
+  "metadataUri": "ipfs://bafkreiak7gpedvrbeav3jogowsorxrs4vdvvltr5iufcbyi7rw267bmgaa",
+  "imageUri": "ipfs://bafkreiaoj2ifhfbutcjr4q2dtl5qvsuia7jgt5doodcy2tiwjmooipgwk4",
+  "seller": "0xc59E609d7C705bEAaA2509B15DA64D9967772537",
+  "buyer": "0xaaa9aA738A3336252ACfc863bCEd33bB1b415783",
+  "receipts": [
+    {
+      "hash": "0xdb00c09b13bec1726d2ca64301a4420198a701292c4a627108c0c086e2fb33fb",
+      "blockNumber": 54,
+      "gasUsed": "168699",
+      "status": 1
+    },
+    {
+      "hash": "0xc57680f97ae51cba683f46940768702e2ac203162d5633725b342f276ef85f49",
+      "blockNumber": 55,
+      "gasUsed": "48335",
+      "status": 1
+    },
+    {
+      "hash": "0xf98975f15082df5f51305355ba4c6a7baaae65730f7c8d59b119d3787a9af7cd",
+      "blockNumber": 56,
+      "gasUsed": "154470",
+      "status": 1
+    },
+    {
+      "hash": "0xfe44e57650bab281a680237e8634114f7d8678b63895b7eb854680fddd084b43",
+      "blockNumber": 57,
+      "gasUsed": "256569",
+      "status": 1
+    },
+    {
+      "hash": "0xced71d7a891da0ccb5666827640dc6271b4ee44ef31a4f8511e5b0b7921fa299",
+      "blockNumber": 58,
+      "gasUsed": "228470",
+      "status": 1
+    }
+  ],
+  "chapters": [
+    {
+      "title": "1. TrustChain — demo local",
+      "text": "Hardhat chain 31337. Ví test ký tự động qua adapter EIP-1193; đây không phải MetaMask extension hoặc testnet. Các giao dịch, IPFS và database bên dưới là thật."
+    },
+    {
+      "title": "2. Sản phẩm công khai và IPFS",
+      "text": "Thông tin sản phẩm và ảnh minh họa sẽ được lưu thành bản nháp. Server chuẩn hóa ảnh, bỏ EXIF/GPS rồi pin ảnh và metadata. Không tự đưa địa chỉ hay email tài khoản lên IPFS."
+    },
+    {
+      "title": "3. Bản nháp có thể tiếp tục",
+      "text": "Bản nháp chỉ chủ tài khoản nhìn thấy. Liên kết ví cần chữ ký có nonce một lần. Tiếp theo ví sẽ ký riêng ba giao dịch: mint, approve và đăng bán."
+    },
+    {
+      "title": "4. NFT và listing đã tồn tại trên chain",
+      "text": "NFT #7, listing #6. Web chỉ đánh dấu LISTED sau khi đọc sự kiện thật. Metadata chứa CID ảnh thay vì phụ thuộc URL ảnh bên ngoài."
+    },
+    {
+      "title": "5. Đổi sang người mua",
+      "text": "Đây là tài khoản web và ví khác người bán. Mua qua Escrow gửi 0,15 ETH thử nghiệm; contract kiểm tra giá và chuyển NFT vào nơi ký quỹ trong cùng transaction."
+    },
+    {
+      "title": "6. Đang ký quỹ — HELD",
+      "text": "Tiền và NFT đang do Escrow giữ. Chưa xác nhận nhận hàng thì chưa trả tiền theo luồng bình thường. Có thể mở tranh chấp bằng hash bằng chứng; nhánh đó được kiểm chứng trong bộ test."
+    },
+    {
+      "title": "7. Giải ngân — RELEASED",
+      "text": "Người mua đã ký xác nhận. Contract trả tiền ròng cho người bán, phí cho treasury và chuyển NFT cho người mua. Gas của giao dịch là khoản riêng so với phí giao thức 2,5%."
+    },
+    {
+      "title": "8. Đối chiếu trực tiếp",
+      "text": "Trang này đọc ownerOf và tokenURI từ RPC tại một block, rồi tính lại CID metadata. NFT chứng minh bản ghi số và quyền sở hữu, không tự chứng minh hàng vật lý chính hãng."
+    }
+  ]
+}

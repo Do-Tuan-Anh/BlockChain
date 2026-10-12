@@ -1,124 +1,77 @@
-# AegisMed: Verifiable Pharmaceutical Cold-Chain Provenance and Anti-Counterfeiting via Dynamic NFTs and Merkle Nullifier Trees
+# TrustChain — Báo cáo đồ án blockchain
 
-**Authors:** AegisMed Research Initiative  
-**Keywords:** Dynamic NFTs, Digital Product Passports, Merkle Nullifier Trees, Smart Contracts, Supply Chain Integrity, Cold-Chain Telemetry, EIP-712  
+**Phạm vi:** marketplace thử nghiệm cho hàng hóa vật lý, kết hợp chứng nhận ERC-721, ký quỹ ETH và metadata IPFS. **Trạng thái:** có luồng local thực thi thật; chưa tuyên bố production hoặc đã deploy testnet công khai. Nhóm tự bổ sung trang bìa, thành viên, mã sinh viên, giảng viên và phân công theo yêu cầu môn học.
 
----
+## 1. Bài toán và câu hỏi nghiên cứu
 
-## 1. Abstract
-Counterfeit and substandard pharmaceuticals represent a grave threat to global public health. The World Health Organization (WHO) estimates that over 10.5% of medicines in developing nations are falsified or degraded, driving \$200 billion in annual illicit commerce and causing hundreds of thousands of preventable fatalities. Concurrently, biologics such as mRNA vaccines and insulins are vulnerable to thermal degradation, where cold-chain breakdowns often pass undetected until reaching patients.
+Trong mua bán giữa các cá nhân, người mua lo trả tiền nhưng không nhận đúng hàng; người bán lo giao hàng nhưng không nhận tiền. Một máy chủ marketplace có thể ghi đơn hàng nhưng việc sửa database không nên tùy ý thay đổi quyền sở hữu chứng nhận số hay chuyển tài sản đang ký quỹ.
 
-Existing anti-counterfeiting approaches rely on physical packaging identifiers (e.g., 2D DataMatrix barcodes, RFID tags) coupled with centralized enterprise databases. These legacy architectures are plagued by packaging refill attacks (re-using genuine packaging with adulterated compounds), cross-organizational data silos, and single points of failure. 
+TrustChain khảo sát: (1) quy tắc thanh toán có thể được thực thi và kiểm chứng trên EVM như thế nào; (2) kết hợp dữ liệu riêng tư ngoài chuỗi với lịch sử tài sản công khai ra sao; (3) làm sao web phản ánh đúng sự kiện blockchain sau lỗi hoặc reorg.
 
-In this paper, we introduce **AegisMed**, a decentralized protocol for pharmaceutical cold-chain provenance and anti-counterfeiting. AegisMed couples **Dynamic Non-Fungible Tokens (dNFTs)** as Digital Product Passports (DPPs) with **Merkle Nullifier Trees** and **Autonomous IoT Telemetry Oracles**. AegisMed achieves $O(1)$ on-chain storage for batches comprising hundreds of thousands of serialized units while supporting $O(\log N)$ patient-level verification. Furthermore, it incorporates mutual EIP-712 cryptographic custody handshakes and autonomous on-chain thermal breach detection, irreversibly invalidating degraded consignments before patient dispensation.
+Hệ thống không giải quyết đầy đủ xác thực hàng thật, bằng chứng giao hàng hoặc định danh pháp lý. NFT là bản ghi số do ví phát hành, không phải kết luận giám định vật lý.
 
----
+## 2. Mục tiêu và phạm vi
 
-## 2. Problem Formulation & Shortcomings of Legacy Solutions
+- Kết nối tài khoản web với ví bằng challenge có thời hạn và chống dùng lại.
+- Đưa ảnh và metadata công khai lên IPFS, mint NFT có tokenURI tương ứng.
+- Đăng bán, mua, giữ ETH/NFT trong Escrow; giải ngân, hoàn tiền, timeout.
+- Ghi hash bằng chứng và phán quyết từ ví có quyền phân xử.
+- Đồng bộ events vào PostgreSQL để tìm kiếm và hiển thị; cho phép kiểm chứng trực tiếp owner/tokenURI.
+- Có bằng chứng thực nghiệm từ test, receipt, gas report và video demo.
 
-### 2.1 The Counterfeiting Problem
-Pharmaceutical counterfeiting manifests primarily through two vectors:
-1. **Direct Packaging Forgery**: Low-quality duplication of brand labels and lot numbers.
-2. **Packaging Replay Attacks (Vial Harvesting)**: Counterfeiters recover authentic, discarded glass vials, blister packs, and QR codes from hospitals or landfills, refill them with inert or toxic formulations (e.g., tap water, chalk, or incorrect active ingredients), and reintroduce them into grey markets. Centralized databases that simply confirm whether a serial number "exists" cannot detect if that serial has already been dispensed elsewhere.
+Không triển khai vận chuyển thực, oracle, thanh toán tiền pháp định, chống Sybil hoàn chỉnh, DAO, mã hóa địa chỉ cấp ứng dụng hay nâng cấp contract trong đợt này.
 
-### 2.2 The Cold-Chain Problem
-Biopharmaceutical therapeutics require strict storage within narrow temperature bounds (e.g., $+2^\circ\text{C}$ to $+8^\circ\text{C}$ for standard biologics, $-80^\circ\text{C}$ for ultra-cold mRNA platforms). Thermal excursions cause protein denaturation, aggregation, or mRNA lipid nanoparticle cleavage, destroying therapeutic efficacy. In conventional logistics, temperature dataloggers are read post-facto; human negligence or commercial incentives often lead to thermal breaches being concealed or overlooked during handover.
+## 3. Cơ sở kỹ thuật và lựa chọn thiết kế
 
-### 2.3 Why Blockchain & NFTs?
-| Feature | Centralized Database (ERP/SAP) | Standard Fungible Token (ERC-20) | AegisMed Dynamic NFT (dNFT) |
-| :--- | :--- | :--- | :--- |
-| **Trust Architecture** | Siloed, single point of failure | Decentralized | Decentralized multi-stakeholder consensus |
-| **Granular Identity** | Cloned across database copies | Indistinguishable units | Unique cryptographic Digital Product Passport |
-| **Dynamic State Lifecycle** | Mutable by central admin | None | Enforced on-chain Finite State Machine (FSM) |
-| **Packaging Anti-Replay** | Vulnerable to duplicate queries | N/A | Cryptographic on-chain Nullifiers |
-| **Cold-Chain Breach Defense** | Post-delivery manual review | None | Autonomous smart-contract auto-freeze & recall |
+ERC-721 cung cấp giao diện nhận biết chủ sở hữu, cấp quyền và chuyển token; metadata extension có `tokenURI`. TrustChain sử dụng các thao tác đó để nối chứng nhận với listing và custody trong Escrow. [Đặc tả ERC-721](https://eips.ethereum.org/EIPS/eip-721).
 
----
+Trình duyệt giao tiếp với ví qua `request` và các thông báo thay đổi tài khoản/network của EIP-1193. Ứng dụng dùng ethers để mã hóa lời gọi và chờ receipt; private key thuộc ví. Chữ ký liên kết hiện là thông điệp riêng, **không phải triển khai đăng nhập SIWE chuẩn EIP-4361**. [Đặc tả EIP-1193](https://eips.ethereum.org/EIPS/eip-1193).
 
-## 3. System Architecture & Cryptographic Mechanics
+IPFS định danh nội dung bằng CID; CID còn phụ thuộc codec/importer/chunking, không đơn thuần là chuỗi SHA-256 của toàn bộ file. Hệ thống cố định importer rồi tính lại CID cho nội dung đọc về. [Tài liệu CID](https://docs.ipfs.tech/concepts/content-addressing/).
 
-### 3.1 Finite State Machine (FSM)
-Each pharmaceutical lot is minted as an ERC-721 Dynamic NFT adhering to the following deterministic state transition graph:
+Pin giúp node giữ nội dung khỏi garbage collection, nhưng cần duy trì node/replica hoặc bản sao để giữ khả dụng. Dự án có volume Docker, replica Kubo tùy chọn và backup CAR có checksum. [Tài liệu pin IPFS](https://docs.ipfs.tech/how-to/pin-files/).
 
-$$\mathcal{S} \in \{ \text{MANUFACTURED}, \text{QUALITY\_CERTIFIED}, \text{IN\_TRANSIT}, \text{DISTRIBUTOR\_CUSTODY}, \text{PHARMACY\_RECEIVED}, \text{DISPENSING}, \text{RECALLED\_SPOILAGE}, \text{COMPLETED} \}$$
+Chọn kiến trúc hybrid vì mô tả dài và dữ liệu tài khoản không cần đồng thuận EVM, trong khi quyền chuyển NFT và tiền ký quỹ cần quy tắc kiểm chứng được. Local dùng Hardhat; pipeline testnet thống nhất **Ethereum Sepolia, chain ID 11155111**, không phải Base Sepolia. Việc triển khai công khai còn cần cấu hình và ETH testnet của nhóm.
 
-- **State 0 (MANUFACTURED)**: Minted by an accredited manufacturer with batch parameters, expiration date, safe temperature intervals, and unit Merkle root.
-- **State 1 (QUALITY\_CERTIFIED)**: Certified by regulatory lab or accredited QA officer with immutable IPFS-linked Certificate of Analysis (CoA).
-- **State 2 (IN\_TRANSIT)**: En route under custody of an accredited cold-chain carrier.
-- **State 3 (DISTRIBUTOR\_CUSTODY)**: Safely received at wholesale hub.
-- **State 4 (PHARMACY\_RECEIVED)**: Inward inventory accepted at clinic or hospital dispensary.
-- **State 5 (DISPENSING)**: Activated for point-of-care patient administration.
-- **State 6 (RECALLED\_SPOILAGE)**: Terminal quarantine state triggered automatically upon thermal excursion or contamination alert.
-- **State 7 (COMPLETED)**: Terminal state entered when all serialized unit nullifiers are marked consumed.
+## 4. Phương pháp triển khai
 
-### 3.2 Merkle Nullifier Trees for Unit-Level Anti-Replay
-Minting individual NFTs for every single vial or blister pack in a 100,000-unit lot would incur astronomical gas overhead:
-$$\text{Cost} = 100,000 \times \sim 80,000 \text{ gas} \approx 8 \times 10^9 \text{ gas} \approx \text{Thousands of USD in fees}$$
+Chi tiết sơ đồ ở [ARCHITECTURE.md](ARCHITECTURE.md). Sáu contract đang build là MarketplaceNFT, Marketplace, Escrow, FeeManager, Reputation và DisputeResolution. Phía web dùng Next.js/NextAuth/Prisma/PostgreSQL; schema runtime nằm trong `apps/web/prisma`.
 
-AegisMed resolves this through a **Hierarchical Merkle Commitment**:
-1. **Off-Chain Tree Construction**: The manufacturer generates $N$ serialized items:
-   $$\mathcal{U} = \{ (\text{serial}_1, s_1), (\text{serial}_2, s_2), \dots, (\text{serial}_N, s_N) \}$$
-   where $s_i \in \{0, 1\}^{256}$ is a cryptographically secure random salt printed solely under a scratch-off latex coating on the unit packaging.
-2. **Leaf Computation**:
-   $$L_i = \text{keccak256}(\text{abi.encodePacked}(\text{batchId}, \text{serial}_i, s_i))$$
-3. **On-Chain Commitment**: The root $\mathcal{R}$ of the balanced binary Merkle tree is stored in the batch NFT ($O(1)$ space, 32 bytes).
-4. **Point-of-Care Nullification**: When a pharmacist or patient administers unit $i$:
-   - The dispensary presents $L_i$ and the sibling path proof $\pi_i = \{ p_1, \dots, p_{\lceil\log_2 N\rceil} \}$.
-   - The contract verifies:
-     $$\text{MerkleProof.verify}(\pi_i, \mathcal{R}, L_i) \equiv \text{True}$$
-   - The contract enforces the nullifier map:
-     $$\text{isUnitDispensed}[L_i] == \text{False}$$
-     $$\text{isUnitDispensed}[L_i] \leftarrow \text{True}$$
-   - Any duplicate attempt to scan the same packaging immediately reverts with `UnitAlreadyDispensed(L_i)`, defeating packaging reuse attacks.
+Người bán lưu bản nháp, tải ảnh (tối đa 5 MB), server decode và bỏ EXIF/GPS, pin WebP. Khi chuẩn bị mint, metadata chứa CID ảnh và thuộc tính sản phẩm được pin; snapshot bị khóa chỉnh sửa. Sau mint, approve và listing, indexer mới đánh dấu LISTED. Nếu người dùng dừng giữa chừng, bản nháp riêng cho phép tiếp tục.
 
-### 3.3 Autonomous IoT Cold-Chain Oracle Integration
-Certified temperature loggers (e.g. Sensitech, TempTale, or Chainlink IoT nodes) transmit cryptographic readings during transit:
-$$\mathcal{T} = (\text{batchId}, T_{\text{observed}}, \text{timestamp}, \text{sensorId})$$
+Người mua ký `buyItem` với đúng giá wei. Contract chuyển NFT và ETH vào Escrow trong một transaction. Khi giải ngân, NFT tới buyer, tiền ròng tới seller, phí tới treasury. Hash bằng chứng có thể giúp so sánh file được trình bày sau này, nhưng không tự chứng minh file nói đúng sự thật.
 
-If $T_{\text{observed}} < T_{\text{min}}$ or $T_{\text{observed}} > T_{\text{max}}$, the contract autonomously triggers:
-$$\text{state} \leftarrow \text{RECALLED\_SPOILAGE}$$
-$$\text{emit ColdChainBreach}(\text{batchId}, T_{\text{observed}}, T_{\text{threshold}}, \text{sensorId}, \text{timestamp})$$
+Indexer dùng journal duy nhất theo transaction/log, checkpoint bền vững và transaction DB. Kiểm thử chủ động gây lỗi ghi DB và đổi nhánh local để đánh giá phục hồi. Metadata binding kiểm tra cả ví nhận NFT và ví gửi giao dịch, tránh người khác mint URI tương tự rồi chiếm trạng thái sản phẩm.
 
-Once quarantined, all custodial transfers and unit dispensations are hard-blocked at the EVM bytecode level.
+## 5. Đánh giá thực nghiệm
 
-### 3.4 EIP-712 Dual-Signed Custodial Handshake
-Custody transitions between entities (e.g. Manufacturer $\to$ Carrier, Carrier $\to$ Pharmacy) utilize EIP-712 typed structured hashing to ensure non-repudiation:
-```solidity
-struct CustodyTransfer {
-    uint256 batchId;
-    address from;
-    address to;
-    uint8 targetState;
-    int16 handoverTemp;
-    uint256 nonce;
-    uint256 deadline;
-}
-```
-Both parties must supply valid ECDSA signatures over the digest:
-$$\text{Digest} = \text{keccak256}("\backslash x19\backslash x01" \parallel \text{DomainSeparator} \parallel \text{hashStruct}(\text{CustodyTransfer}))$$
+Môi trường và kết quả cụ thể nằm ở [TEST_REPORT.md](TEST_REPORT.md). Không thay số liệu thực nghiệm bằng kết quả giả định.
 
----
+- Unit test contract kiểm tra quyền truy cập, giá, approvals, giải ngân một lần, timeout, hoàn tiền và phân xử; có tình huống bị thu hồi approve và chuyển NFT khiến listing cũ không còn mua được.
+- Integration test dùng PostgreSQL, Kubo và RPC thật: upload ảnh, đọc CID, khóa metadata, replay signature, mua bán, hai hướng ruling, worker restart, rollback và reorg.
+- Browser test thao tác UI desktop/mobile với adapter ví thử nghiệm; RPC, chữ ký và contract là thật. Chưa tương đương kiểm chứng extension MetaMask thật.
+- [GAS_REPORT.md](GAS_REPORT.md) sinh tự động từ receipt. Gas phụ thuộc hàm, dữ liệu và trạng thái storage; không suy rộng một lần đo thành năng lực phục vụ production.
+- [DEMO_GUIDE.md](DEMO_GUIDE.md) hướng dẫn trình diễn và đối chiếu bằng chứng.
 
-## 4. Threat Model & Security Analysis
+Ví dụ luồng kiểm tra dùng đơn 0,2 ETH và phí 250 bps: số tiền ròng 0,195 ETH, treasury 0,005 ETH. Gas là khoản riêng do người gửi transaction trả, không được cộng nhầm vào phí giao thức.
 
-| Threat / Attack Vector | Attack Mechanism | AegisMed Mitigation |
-| :--- | :--- | :--- |
-| **Vial Harvesting & Packaging Re-use** | Counterfeiter collects genuine empty packaging and refills with fake drug. | **On-Chain Nullifier**: Unit hash is permanently marked as consumed. Second verification triggers `UnitAlreadyDispensed()` revert. |
-| **Thermal Excursion Cover-Up** | Logistics driver conceals refrigeration breakdown to avoid penalties. | **Autonomous Oracle Telemetry**: Tamper-proof IoT sensor logs directly trigger smart contract state transition to `RECALLED_SPOILAGE`. |
-| **Counterfeit Lot Injection** | Malicious actor mints fake batch on-chain and attempts to deliver to hospital. | **Regulatory RBAC**: Only addresses whitelisted with `MANUFACTURER_ROLE` in `AegisMedRegistry` can execute `mintBatch()`. |
-| **Custody Diversion / Cargo Theft** | Intermediary diverts authentic shipment to black market and replaces with counterfeit. | **EIP-712 Custody Handshake**: Receiving pharmacy verifies authentic cryptographic transfer signed by previous custodian. |
-| **Gas Exhaustion / DoS** | High transaction costs prevent scaling to millions of individual packages. | **Merkle Tree Compression**: 1 transaction mints 100,000 units ($O(1)$ storage), individual unit verification is only $\sim 28,000$ gas. |
+## 6. An toàn và giới hạn niềm tin
 
----
+| Rủi ro | Cơ chế hiện tại | Phần còn hạn chế |
+|---|---|---|
+| Giả ví / replay | Recover signer, nonce một lần, TTL, userId, origin | Chưa hỗ trợ ví hợp đồng EIP-1271 |
+| Giả trạng thái NFT | Đọc logs từ địa chỉ deployment, binding ví và URI | Backend/RPC vẫn ảnh hưởng khả dụng và hiển thị |
+| Ảnh độc hại / lộ EXIF | Giới hạn byte/pixel, decode lại raster, bỏ metadata | Người dùng vẫn có thể chụp thông tin cá nhân trong ảnh |
+| Mất pin | Volume, replica cấu hình, CAR backup | Một node/backup trên cùng máy không chống mất cả máy |
+| DB sai hoặc reorg | Atomic commit, checkpoint/hash, replay | Chưa có stress test/reorg lớn/HA nhiều vùng |
+| Mua sai giá hoặc không có quyền NFT | Contract kiểm tra giá, ownership/approval | Có thể có nhiều listing cũ cho cùng NFT |
+| Tranh chấp | Role on-chain, hash evidence, receipt công khai | Trọng tài và owner vẫn có quyền tập trung |
+| Danh tính giả / tự giao dịch giữa nhiều ví | Uy tín phát sinh qua thao tác được cho phép | Không loại bỏ Sybil hoặc wash trading |
 
-## 5. Regulatory Compliance Alignment
+Các đường xử lý Escrow trực tiếp có thể làm hồ sơ tranh chấp và trạng thái tiền khác nhau; UI có cảnh báo nhưng chưa thay logic Solidity. Đây là điểm cần trình bày khi bảo vệ và cần đánh giá lại trước triển khai có giá trị thật. Các test pass không phải chứng nhận audit.
 
-AegisMed is engineered specifically to align with two major global regulatory standards:
-1. **US FDA Drug Supply Chain Security Act (DSCSA)**: Requires interoperable, electronic, unit-level traceability across the pharmaceutical distribution supply chain. AegisMed fulfills Section 582 requirements for verifiable Product Identifiers (GTIN/NDC, serial number, lot number, expiration date) and automated quarantine of suspect products.
-2. **EU Falsified Medicines Directive (FMD - Directive 2011/62/EU)**: Requires a unique identifier (UI) and an anti-tampering device (ATD) on prescription packaging. AegisMed fulfills the repository requirement with decentralized immutability and anti-tamper nullifiers.
+## 7. Kết luận và hướng phát triển
 
----
+Kết quả cần chứng minh là một transaction thực sự làm thay đổi ownership hoặc số dư contract và web phản ánh sự thay đổi đó bằng receipt/events. Phần đã triển khai hỗ trợ chứng minh này trên local, cùng khả năng kiểm tra nội dung IPFS và phục hồi đồng bộ.
 
-## 6. Conclusion
-AegisMed demonstrates how modern blockchain primitives—Dynamic NFTs, Merkle Nullifier Trees, and EIP-712 cryptography—can solve critical life-safety problems in the physical world. By replacing vulnerable centralized databases with transparent, decentralized state machines and autonomous IoT oracles, AegisMed provides an unbreakable chain of custody from pharmaceutical synthesis to patient administration.
-
+Các bước ngoài phạm vi local: triển khai và kiểm chứng Sepolia công khai, duy trì pin độc lập ngoài máy, thử ví extension thật, audit các đường giải quyết tranh chấp, thiết kế định danh/chống lạm dụng và đánh giá tải. Nhóm cần đối chiếu rubric môn học trước khi coi bộ hồ sơ là hoàn tất nộp bài.

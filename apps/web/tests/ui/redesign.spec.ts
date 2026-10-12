@@ -31,6 +31,7 @@ test('dark marketplace keeps listing, discovery, navigation and escrow interacti
     await page.locator('#listing-category').selectOption('Watches');
     await page.locator('#listing-condition').selectOption('Like New');
     await page.locator('#listing-price').fill('0.25');
+    await page.getByRole('checkbox').uncheck(); // Regular off-chain listing remains supported.
     await expect(page.locator('aside').getByText(title, { exact: true })).toBeVisible();
     await checkLayout('listing-form');
     await page.locator('form button[type="submit"]').click();
@@ -99,20 +100,10 @@ test('dark marketplace keeps listing, discovery, navigation and escrow interacti
       await checkLayout(route.replace('/', '-'));
     }
     await page.goto('/en/orders/1');
-    await expect(page.locator('.escrow-step[aria-current="step"]')).toHaveText(/Shipped/i);
+    await expect(page.getByRole('heading', { name: 'Order #1', exact: true })).toBeVisible();
     await checkLayout('escrow-order');
-    await page.getByRole('button', { name: /Confirm Delivery/i }).click();
-    await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.locator('.escrow-step[aria-current="step"]')).toHaveText(/Completed|Released|Settled/i);
-    await page.getByRole('button', { name: /: 4\/5$/ }).click();
-    await expect(page.getByRole('button', { name: /: 4\/5$/ })).toHaveAttribute('aria-pressed', 'true');
-    await checkLayout('review-dialog');
-    await page.keyboard.press('Escape');
-    await expect(page.getByRole('dialog')).toHaveCount(0);
-    await page.getByRole('button', { name: /Leave.*Review/i }).click();
-    await page.locator('#review-comment').fill('Regression check of the existing review interaction.');
-    await page.getByRole('button', { name: /Submit.*Review/i }).click();
-    await expect(page.getByRole('dialog')).toHaveCount(0);
+    // Real wallet-backed escrow is exercised by blockchain.spec.ts; guests cannot settle.
+    await expect(page.getByRole('button', { name: /Received item/i })).toHaveCount(0);
     await page.getByRole('button', { name: /^Account menu:/ }).click();
     // Arrow navigation includes the new theme and language options; End still reaches logout.
     await page.keyboard.press('ArrowDown');

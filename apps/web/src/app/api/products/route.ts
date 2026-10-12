@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { Prisma, ProductStatus } from '@prisma/client';
 import { currentUser } from '@/lib/auth';
 import { authError, validOrigin } from '@/lib/auth-security';
+import { parseEther } from 'ethers';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,6 +66,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid product data' }, { status: 400 });
     }
     const { title, description, category, condition, brand, model, price, currency, imageUrl } = body;
+    if (body.onchain === true) {
+      try { if (parseEther(String(price)) <= BigInt(0) || (currency && currency !== 'ETH')) throw new Error(); }
+      catch { return authError('INVALID_ETH_PRICE'); }
+    }
 
     if ([title, description, category, condition].some(value => typeof value !== 'string' || !value.trim()) ||
         !['string', 'number'].includes(typeof price) || !Number.isFinite(Number(price)) || Number(price) <= 0) {
@@ -89,7 +94,7 @@ export async function POST(req: NextRequest) {
         price: String(price).trim(),
         currency: currency || 'ETH',
         imageUrl: imageUrl || null,
-        status: 'LISTED',
+        status: body.onchain === true ? 'DRAFT' : 'LISTED',
         sellerId: seller.id,
       },
       include: {

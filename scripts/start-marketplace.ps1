@@ -10,7 +10,7 @@ $dockerPath = if ($dockerCommand) { $dockerCommand.Source } else {
 }
 if (!$dockerPath) { throw 'Docker CLI not found. Install Docker Desktop and reopen the terminal.' }
 
-& $dockerPath compose up -d --wait postgres mailpit
+& $dockerPath compose up -d --wait postgres mailpit ipfs
 if ($LASTEXITCODE -ne 0) { throw 'Cannot start PostgreSQL. Open Docker Desktop and try again.' }
 
 if (!(Test-Path 'apps/web/.env')) {

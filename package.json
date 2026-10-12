@@ -4,15 +4,23 @@
   "description": "AegisMed: Decentralized Pharmaceutical Cold-Chain Provenance & Dynamic NFT Digital Product Passport Protocol",
   "main": "index.js",
   "scripts": {
+    "ipfs:check": "node scripts/ipfs-maintenance.cjs check",
+    "ipfs:backup": "node scripts/ipfs-maintenance.cjs backup",
+    "ipfs:restore": "node scripts/ipfs-maintenance.cjs restore",
+    "report:gas": "hardhat run packages/contracts/scripts/gas-report.js",
+    "deploy:local": "hardhat run packages/contracts/scripts/deploy.js --network localhost",
+    "deploy:sepolia": "hardhat run packages/contracts/scripts/deploy.js --network sepolia",
+    "indexer": "node apps/indexer/worker.cjs",
+    "indexer:once": "node apps/indexer/worker.cjs --once",
     "dev:marketplace": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-marketplace.ps1",
     "compile": "hardhat compile",
     "test": "hardhat test",
-    "node": "hardhat node",
+    "node": "hardhat node --hostname 127.0.0.1",
     "simulate": "hardhat run scripts/simulate-supply-chain.js",
     "simulate:verimarket": "hardhat run packages/contracts/scripts/simulate-e2e.js",
-    "deploy:verimarket": "hardhat run packages/contracts/scripts/deploy.js",
+    "deploy:verimarket": "hardhat run packages/contracts/scripts/deploy.js --network localhost",
     "simulate:trustchain": "hardhat run packages/contracts/scripts/simulate-e2e.js",
-    "deploy:trustchain": "hardhat run packages/contracts/scripts/deploy.js"
+    "deploy:trustchain": "hardhat run packages/contracts/scripts/deploy.js --network localhost"
   },
   "keywords": [
     "blockchain",

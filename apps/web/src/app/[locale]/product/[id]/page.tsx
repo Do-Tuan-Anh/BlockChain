@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "../../../../contexts/LanguageContext";
 import { Product } from "@/lib/products";
 import { ArrowLeft, Layers3, Package, UserRound } from 'lucide-react';
+import { ProductBlockchain } from '@/components/ChainControls';
+import { mediaUrl } from '@/lib/media';
 
 export default function ProductDetailPage() {
   const params = useParams<{ id: string; locale: string }>();
@@ -38,7 +40,7 @@ export default function ProductDetailPage() {
       <a href={`/${locale}/explore`} className="inline-flex min-h-11 items-center gap-2 text-accent-soft text-sm"><ArrowLeft size={16} />{t("createListing.viewMarketplace")}</a>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
         <div className="aspect-square rounded-3xl overflow-hidden bg-inset border border-line flex items-center justify-center lg:sticky lg:top-28">
-          {product.imageUrl && failedImage !== product.imageUrl ? <img src={product.imageUrl} alt={product.title} onError={() => setFailedImage(product.imageUrl)} className="w-full h-full object-cover" /> : <span className="product-placeholder" aria-label={product.title}><Package size={90} strokeWidth={.8} /></span>}
+          {product.imageUrl && failedImage !== product.imageUrl ? <img src={mediaUrl(product.imageUrl)} alt={product.title} onError={() => setFailedImage(product.imageUrl)} className="w-full h-full object-cover" /> : <span className="product-placeholder" aria-label={product.title}><Package size={90} strokeWidth={.8} /></span>}
         </div>
         <div className="space-y-6">
           <div>
@@ -61,6 +63,7 @@ export default function ProductDetailPage() {
             <p className="font-mono text-xs text-muted break-all mt-2">{product.seller.walletAddress}</p>
           </div>
           <p className="flex items-center gap-2 rounded-xl border border-line bg-inset p-4 text-xs text-muted"><Layers3 size={17} className="shrink-0" />{product.nftTokenId ? `NFT #${product.nftTokenId}` : t("product.notMinted")}</p>
+          <ProductBlockchain product={product} onUpdated={setProduct} />
         </div>
       </div>
     </div>

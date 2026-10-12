@@ -2,13 +2,13 @@
 
 TrustChain là đồ án blockchain mô phỏng một chợ mua bán sản phẩm vật lý. Smart contract quản lý chứng nhận ERC-721, listing, thanh toán ký quỹ, tranh chấp và uy tín; ứng dụng web quản lý tài khoản, hồ sơ và dữ liệu sản phẩm ngoài chuỗi.
 
-> **Trạng thái hiện tại:** bộ smart contract và ứng dụng web đều chạy được, nhưng web **chưa gọi trực tiếp smart contract**. Tạo mặt hàng trên web hiện chỉ lưu PostgreSQL. Luồng blockchain hoàn chỉnh được chứng minh riêng bằng test và mô phỏng Hardhat.
+> **Trạng thái hiện tại:** web đã kết nối ví và gọi smart contract cho luồng IPFS → mint NFT → đăng bán → mua qua Escrow → giải ngân/hoàn tiền/phân xử. Indexer đồng bộ sự kiện thật vào PostgreSQL. Đã cấu hình pipeline local và Sepolia; deployment công khai cần RPC, ví và ETH testnet của nhóm. Xem [hướng dẫn blockchain](docs/BLOCKCHAIN_SETUP.md).
 
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.28-363636?logo=solidity)](https://soliditylang.org/)
 [![Hardhat](https://img.shields.io/badge/Hardhat-local%20EVM-yellow)](https://hardhat.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql)](https://www.postgresql.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 
 ## Blockchain được dùng ở đâu?
 
@@ -59,7 +59,7 @@ npm.cmd run simulate:trustchain
 
 Kết quả đã xác minh tại local:
 
-- **23 test passing** cho mint NFT, listing, escrow, hoàn tiền, timeout, tranh chấp và reputation.
+- **29 test passing** cho mint NFT, listing, escrow, hoàn tiền, timeout, tranh chấp, reputation và các trường hợp thiếu quyền/approval/ownership.
 - Mô phỏng triển khai 6 contract trên blockchain Hardhat tạm thời.
 - Alice mint NFT và đăng bán với giá `1.5 ETH`.
 - Bob mua; `1.5 ETH` và NFT được khóa trong `Escrow`.
@@ -78,7 +78,9 @@ Mỗi lần chạy `simulate:trustchain`, Hardhat tạo một blockchain in-memo
 | Uy tín từ giao dịch hoàn tất | Smart contract | Hạn chế tự tạo đánh giá giả |
 | Email, mật khẩu hash, số điện thoại | PostgreSQL | Không đưa dữ liệu cá nhân lên blockchain công khai |
 | Hồ sơ, địa chỉ, mô tả và bộ lọc sản phẩm | PostgreSQL | Dễ cập nhật và tìm kiếm, không tốn gas |
-| Ảnh và metadata NFT | Chưa tích hợp IPFS thật | URI trong mô phỏng hiện là dữ liệu minh họa |
+| Metadata NFT | IPFS Kubo trong Docker | Snapshot nội dung công khai, CID được ghi trong NFT |
+| Ảnh sản phẩm blockchain | IPFS, URI trong metadata | Upload ảnh, chuẩn hóa WebP và bỏ EXIF/GPS trước khi pin |
+| Events, NFT, listing, order, dispute | Bản sao có checkpoint trong PostgreSQL | Tra cứu nhanh, có thể phát lại từ blockchain |
 
 Blockchain không tự chứng minh món hàng vật lý là hàng thật. Nó chứng minh lịch sử của chứng nhận số, quyền sở hữu và việc thanh toán tuân theo smart contract. Độ tin cậy ban đầu vẫn phụ thuộc bên phát hành chứng nhận và quy trình xác minh sản phẩm.
 
@@ -86,7 +88,7 @@ Blockchain không tự chứng minh món hàng vật lý là hàng thật. Nó c
 
 Yêu cầu:
 
-- Node.js 20.6 trở lên.
+- Node.js 22 trở lên.
 - Docker Desktop đang chạy.
 
 Từ thư mục gốc:
@@ -97,7 +99,7 @@ npm.cmd run dev:marketplace
 
 Lệnh này:
 
-1. Khởi động PostgreSQL và Mailpit bằng Docker.
+1. Khởi động PostgreSQL, Mailpit và IPFS bằng Docker.
 2. Tạo/cập nhật cấu hình local và Prisma Client.
 3. Đồng bộ schema của web.
 4. Chạy Next.js tại http://localhost:3000.
@@ -112,6 +114,11 @@ Hướng dẫn chi tiết:
 
 - [Chạy marketplace local](docs/MARKETPLACE_LOCAL.md)
 - [Đăng ký, xác thực email và OAuth](docs/AUTH_SETUP.md)
+- [Kết nối ví, deploy contract, IPFS, Escrow và indexer](docs/BLOCKCHAIN_SETUP.md)
+- [Ảnh IPFS, kiểm tra CID, sao lưu và khôi phục CAR](docs/IPFS_STORAGE.md)
+- [Kiến trúc thực thi và sơ đồ](docs/ARCHITECTURE.md)
+- [Báo cáo học thuật](docs/WHITE_PAPER.md), [gas thực đo](docs/GAS_REPORT.md), [kết quả kiểm thử](docs/TEST_REPORT.md)
+- [Kịch bản và ghi video demo](docs/DEMO_GUIDE.md), [checklist nộp bài](docs/SUBMISSION_CHECKLIST.md)
 
 ## Những gì web đã làm được
 
@@ -122,33 +129,29 @@ Hướng dẫn chi tiết:
 - Tạo, xem và lọc mặt hàng lưu trong PostgreSQL.
 - Giao diện tiếng Việt/tiếng Anh và responsive.
 - Giới hạn quyền truy cập hồ sơ, sản phẩm và trang quản trị.
+- Liên kết ví bằng chữ ký một lần, kiểm tra đúng chain/deployment.
+- Lưu bản nháp, upload ảnh và ghim metadata IPFS, mint/approve/list từ ví người bán.
+- Kiểm tra CID, cấu hình node pin dự phòng, sao lưu/khôi phục IPFS bằng CAR.
+- Mua bán Escrow, giải ngân, hoàn tiền, timeout và phân xử bằng giao dịch thật.
+- Kho NFT, đơn hàng, xác minh và phân xử đọc dữ liệu thật; giao dịch testnet có link explorer.
+- Indexer có journal, checkpoint, chống trùng, retry và phục hồi reorg cơ bản.
 
 ## Giới hạn hiện tại
 
-Những phần sau chưa phải dữ liệu blockchain thật trên giao diện:
-
-- Form đăng mặt hàng chưa mint `MarketplaceNFT` và chưa gọi `createListing`.
-- Trang NFT đang dùng danh sách mẫu.
-- Trang đơn hàng và tiến trình escrow đang dùng object mẫu.
-- Trang phân xử đang dùng danh sách tranh chấp mẫu.
-- Web chưa kết nối ví, chưa kiểm tra network và chưa hiển thị transaction hash.
-- IPFS chưa được tích hợp; mô phỏng chỉ sử dụng URI minh họa.
+- Chưa triển khai Sepolia bằng ví của nhóm; cần điền cấu hình theo hướng dẫn.
+- Chưa kiểm chứng extension MetaMask thật; UI test sử dụng adapter EIP-1193 ký giao dịch thật trên Hardhat.
+- Hardhat local mất trạng thái khi tắt node. Mỗi lần khởi động chain mới cần deploy lại.
+- IPFS local cần node/pin còn hoạt động; chưa có dịch vụ pin ảnh và metadata công khai lâu dài.
 - Dữ liệu nhạy cảm nằm ngoài chuỗi nhưng chưa có lớp mã hóa ứng dụng riêng cho địa chỉ giao hàng.
-- Script `packages/contracts/scripts/deploy.js` còn mã trùng và chưa nằm trong quy trình đã xác minh; dùng `simulate:trustchain` để demo local ở thời điểm hiện tại.
+- Phân xử vẫn có quyền owner/arbitrator tập trung theo contract hiện có. Chưa thực hiện audit bảo mật độc lập.
 
 Vì vậy, UI không nên tuyên bố một mặt hàng “đã được NFT xác minh” hoặc “được escrow bảo vệ” nếu bản ghi chưa có `chainId`, địa chỉ contract, `tokenId` và transaction hash tương ứng.
 
-## Lộ trình tích hợp blockchain với web
+## Chạy blockchain cùng web
 
-1. Kết nối MetaMask bằng wagmi/viem và yêu cầu đúng `chainId`.
-2. Sửa pipeline deploy, xuất ABI và địa chỉ contract cho web.
-3. Khi đăng sản phẩm: upload metadata, mint NFT, approve và tạo listing.
-4. Lưu `chainId`, `contractAddress`, `tokenId`, `listingId` và `txHash` vào PostgreSQL để lập chỉ mục.
-5. Khi mua: gọi `buyItem`, đọc receipt và đồng bộ event `ItemPurchased`/`EscrowDeposited`.
-6. Thay trang đơn hàng mẫu bằng dữ liệu `Escrow.getEscrow()`.
-7. Thay trang tranh chấp mẫu bằng `DisputeResolution` và hash bằng chứng.
-8. Hiển thị trạng thái pending/confirmed/reverted cùng liên kết block explorer.
-9. Triển khai lên testnet để giao dịch và contract tồn tại độc lập với máy phát triển.
+Chạy `npm.cmd run node` trong terminal riêng, rồi `npm.cmd run deploy:local`. Khởi động web bằng `npm.cmd run dev:marketplace`, và worker trong terminal khác bằng `npm.cmd run indexer`. Trình tự, ví demo, quyền trọng tài và cấu hình Sepolia được mô tả tại [BLOCKCHAIN_SETUP.md](docs/BLOCKCHAIN_SETUP.md).
+
+Chọn **Đăng bán blockchain** trên form để đi qua IPFS/NFT/Escrow. Đăng tin thông thường vẫn được hỗ trợ nhưng không được gắn nhãn là giao dịch on-chain.
 
 ## Kiểm tra web
 
@@ -157,6 +160,8 @@ Khi PostgreSQL, Mailpit và web đang chạy:
 ```powershell
 npm.cmd run typecheck --prefix apps/web
 npm.cmd run test:auth --prefix apps/web
+npm.cmd run test:chain --prefix apps/web
+npm.cmd run test:ipfs --prefix apps/web
 npm.cmd run test:ui --prefix apps/web
 ```
 
@@ -167,20 +172,20 @@ BlockChain/
 ├── apps/web/                      # Next.js, NextAuth, Prisma và giao diện marketplace
 ├── packages/contracts/
 │   ├── contracts/                # Bộ smart contract TrustChain đang được Hardhat build
-│   ├── test/                     # 23 kiểm thử smart contract
+│   ├── test/                     # 29 kiểm thử smart contract
 │   └── scripts/                  # Deploy và mô phỏng marketplace
 ├── prisma/schema.prisma          # Schema backend mở rộng, chưa phải schema runtime của web
 ├── apps/web/prisma/schema.prisma # Schema PostgreSQL mà web đang sử dụng
 ├── contracts/                    # Prototype nghiên cứu AegisMed, không thuộc Hardhat build chính
-├── docs/                         # Hướng dẫn local, auth và tài liệu AegisMed cũ
-├── docker-compose.yml            # PostgreSQL + Mailpit
+├── docs/                         # Kiến trúc, báo cáo, gas, kiểm thử, demo; bản cũ ở archive/
+├── docker-compose.yml            # PostgreSQL + Mailpit + IPFS
 ├── hardhat.config.js             # Cấu hình TrustChain contracts/tests
 └── package.json                  # Script cấp repository
 ```
 
 ## Ghi chú về AegisMed
 
-Thư mục [`contracts`](contracts) cùng [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) và [`docs/WHITE_PAPER.md`](docs/WHITE_PAPER.md) là prototype nghiên cứu trước đây về truy xuất dược phẩm, Merkle proof và cold-chain oracle. Prototype này được giữ lại để tham khảo nhưng **không được biên dịch hoặc kiểm thử bởi cấu hình Hardhat chính hiện tại**.
+Thư mục [`contracts`](contracts) và tài liệu trong [`docs/archive`](docs/archive/README.md) là prototype/blueprint nghiên cứu trước đây, gồm truy xuất dược phẩm, Merkle proof và cold-chain oracle. Prototype này được giữ lại để tham khảo nhưng **không được biên dịch hoặc kiểm thử bởi cấu hình Hardhat chính hiện tại**. `docs/ARCHITECTURE.md` và `docs/WHITE_PAPER.md` hiện mô tả TrustChain thực tế.
 
 Nếu tiếp tục AegisMed, cần tách thành workspace/cấu hình Hardhat riêng và không trộn tuyên bố của AegisMed với sản phẩm TrustChain.
 

@@ -71,10 +71,12 @@ export async function PUT(
       );
     }
     if (existing.sellerId !== user.id) return authError('FORBIDDEN', 403);
+    if (existing.metadataUri) return authError('ONCHAIN_METADATA_IS_IMMUTABLE', 409);
 
-    const product = await prisma.product.update({
-      where: { id: (await params).id },
-      data: body,
+    const changed = await prisma.product.updateMany({ where: { id: existing.id, sellerId: user.id, metadataUri: null, updatedAt: existing.updatedAt }, data: body });
+    if (changed.count !== 1) return authError('PRODUCT_CHANGED_RETRY', 409);
+    const product = await prisma.product.findUniqueOrThrow({
+      where: { id: existing.id },
       include: {
         seller: {
           select: {

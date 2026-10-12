@@ -1,4 +1,12 @@
 services:
+  ipfs:
+    image: ipfs/kubo:v0.32.1
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:5001:5001'
+      - '127.0.0.1:8080:8080'
+    volumes:
+      - ipfs_data:/data/ipfs
   postgres:
     image: postgres:16-alpine
     container_name: trustchain-db
@@ -27,4 +35,5 @@ services:
       MP_MAX_MESSAGES: 500
 
 volumes:
+  ipfs_data:
   postgres_data:

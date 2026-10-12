@@ -1,0 +1,301 @@
+{
+  "generatedAt": "2026-10-12T03:35:29.410Z",
+  "network": "isolated Hardhat (not Sepolia)",
+  "chainId": 31337,
+  "compiler": "0.8.28",
+  "evmVersion": "cancun",
+  "viaIR": true,
+  "optimizerRuns": 200,
+  "metadataUri": "ipfs://bafkreifkvj53brtkvkekqveqegepts5t47el375oyro3lxjyxffhxewb6m",
+  "metadataBytes": 159,
+  "measurements": [
+    {
+      "label": "deploy.MarketplaceNFT",
+      "gasUsed": "1283117",
+      "gasPriceWei": "1875000000",
+      "feeWei": "2405844375000000",
+      "txHash": "0xeb8d03589bf89f9e2b0b91a9bf605605f8847217b30deda2801afab950e44cb3",
+      "blockNumber": 1
+    },
+    {
+      "label": "deploy.FeeManager",
+      "gasUsed": "376419",
+      "gasPriceWei": "1770303031",
+      "feeWei": "666375696625989",
+      "txHash": "0xe70eeabe2d3e785cc3214ef468eade3a577257d8997c8600208cd6fc62f3a108",
+      "blockNumber": 2
+    },
+    {
+      "label": "deploy.Escrow",
+      "gasUsed": "1537034",
+      "gasPriceWei": "1675223306",
+      "feeWei": "2574875178914404",
+      "txHash": "0xb886b5cc1ea8dfba255a20e900f66811985f1e395cc090e23c5e2c37d21f7422",
+      "blockNumber": 3
+    },
+    {
+      "label": "deploy.Marketplace",
+      "gasUsed": "863445",
+      "gasPriceWei": "1595144731",
+      "feeWei": "1377319742258295",
+      "txHash": "0x71a8c5b9314a2527e6cd6db71e0713422e5df1d693a26f76f46b5f9def1ea786",
+      "blockNumber": 4
+    },
+    {
+      "label": "deploy.Reputation",
+      "gasUsed": "446110",
+      "gasPriceWei": "1522892785",
+      "feeWei": "679377700316350",
+      "txHash": "0x3dd51967324ea2aba587f60d37d79b8dcb4a719682f919a6f8d14bc7fe878489",
+      "blockNumber": 5
+    },
+    {
+      "label": "deploy.DisputeResolution",
+      "gasUsed": "1060746",
+      "gasPriceWei": "1458503136",
+      "feeWei": "1547101367499456",
+      "txHash": "0x38eb890b1c44f65ddbe5e7e31aa8ac36346b77246740743e85088dff494748c6",
+      "blockNumber": 6
+    },
+    {
+      "label": "sale.mint",
+      "gasUsed": "168699",
+      "gasPriceWei": "1181211466",
+      "feeWei": "199269193102734",
+      "txHash": "0x0381512e38b0abb7b7c540cf5d3ee6f70f87fe40957304a08789f47d4d48f4d8",
+      "blockNumber": 13
+    },
+    {
+      "label": "sale.approve",
+      "gasUsed": "48335",
+      "gasPriceWei": "1158687409",
+      "feeWei": "56005155914015",
+      "txHash": "0x43a29057bd2bbebe3a758dce5ee6f4fb1f2f28dae6833ea57f3a6ebf0ee515e0",
+      "blockNumber": 14
+    },
+    {
+      "label": "sale.list",
+      "gasUsed": "154470",
+      "gasPriceWei": "1138883442",
+      "feeWei": "175923325285740",
+      "txHash": "0x5b55b1a99b75743dd18227d9b89880b2830267ec1c3587e8f2e400f63f2a62e8",
+      "blockNumber": 15
+    },
+    {
+      "label": "sale.buy",
+      "gasUsed": "256569",
+      "gasPriceWei": "1121612401",
+      "feeWei": "287770972112169",
+      "txHash": "0x98799ba2fa45b75891bb04eb1b2624a159938b8c46169df68b7db2d7d2a264b8",
+      "blockNumber": 16
+    },
+    {
+      "label": "sale.release",
+      "gasUsed": "228470",
+      "gasPriceWei": "1106540860",
+      "feeWei": "252811390284200",
+      "txHash": "0xda0ff03de20d9975f3bc394bd81287347480fe41f9419a6369d88c7014204e44",
+      "blockNumber": 17
+    },
+    {
+      "label": "cancel.mint",
+      "gasUsed": "168699",
+      "gasPriceWei": "1093324675",
+      "feeWei": "184442779347825",
+      "txHash": "0x6ee0636fc740911ca1895e8d0621994ca3850e93ded4ac46ae37de760e75555d",
+      "blockNumber": 18
+    },
+    {
+      "label": "cancel.approve",
+      "gasUsed": "48335",
+      "gasPriceWei": "1081724690",
+      "feeWei": "52285162891150",
+      "txHash": "0xba55bc5f4157a312072adfae8a050bb082bddc29b4471c9b8267767df601c95d",
+      "blockNumber": 19
+    },
+    {
+      "label": "cancel.list",
+      "gasUsed": "154470",
+      "gasPriceWei": "1071525563",
+      "feeWei": "165518553716610",
+      "txHash": "0xfe8afab4c787302b64568e16f0abb7e2a60495d3a14e9b44a60a8bf45ebd8bd0",
+      "blockNumber": 20
+    },
+    {
+      "label": "cancel.listing",
+      "gasUsed": "32559",
+      "gasPriceWei": "1062630904",
+      "feeWei": "34598199603336",
+      "txHash": "0x973d07b6ac747ac298c10e6977d2dfad6a98139a3292e6f74d7289c298c8c7d5",
+      "blockNumber": 21
+    },
+    {
+      "label": "refund.mint",
+      "gasUsed": "151599",
+      "gasPriceWei": "1054810538",
+      "feeWei": "159908222750262",
+      "txHash": "0x9891e638e05b238cc6f82ee5a4d9ca826ac50dac25ae0aed8761ecd6bb484db0",
+      "blockNumber": 22
+    },
+    {
+      "label": "refund.approve",
+      "gasUsed": "48335",
+      "gasPriceWei": "1047993843",
+      "feeWei": "50654782401405",
+      "txHash": "0x2f693a1b1a91572eff85ea32ac8b357b7f7df23bbb5b8861b21aa539a0606fbb",
+      "blockNumber": 23
+    },
+    {
+      "label": "refund.list",
+      "gasUsed": "154470",
+      "gasPriceWei": "1042004279",
+      "feeWei": "160958400977130",
+      "txHash": "0xada010a70cede8d361f562f2c2555eaefcbfd3e0042da1a6ed47d40f5431531e",
+      "blockNumber": 24
+    },
+    {
+      "label": "refund.buy",
+      "gasUsed": "261369",
+      "gasPriceWei": "1036780780",
+      "feeWei": "270982355687820",
+      "txHash": "0x478db314ee44aadeb4b59f7b3655ebe85210804002292a43b0c398244e3eba85",
+      "blockNumber": 25
+    },
+    {
+      "label": "refund.voluntary",
+      "gasUsed": "70622",
+      "gasPriceWei": "1032223239",
+      "feeWei": "72897669584658",
+      "txHash": "0x60fe9fcfc7d769e378245abfc192aeb382b9598cfff481fb3c3ff30724d9107d",
+      "blockNumber": 26
+    },
+    {
+      "label": "disputeRefund.mint",
+      "gasUsed": "151599",
+      "gasPriceWei": "1028204817",
+      "feeWei": "155874822052383",
+      "txHash": "0xeb98c18f267951ca8ecf40b5f46b50e8e239c57d4fd2e83cfb195d8e970d014d",
+      "blockNumber": 27
+    },
+    {
+      "label": "disputeRefund.approve",
+      "gasUsed": "48335",
+      "gasPriceWei": "1024697031",
+      "feeWei": "49528730993385",
+      "txHash": "0x8ae98acb4dae2462af888559c76e8d228f62307eb41419b3fdfd3fa0d12df23d",
+      "blockNumber": 28
+    },
+    {
+      "label": "disputeRefund.list",
+      "gasUsed": "154470",
+      "gasPriceWei": "1021614877",
+      "feeWei": "157808850050190",
+      "txHash": "0x3017a542b5eee360bc706317155401e800690aa1f8c870cdf9fd65e37ef32b2f",
+      "blockNumber": 29
+    },
+    {
+      "label": "disputeRefund.buy",
+      "gasUsed": "261369",
+      "gasPriceWei": "1018926930",
+      "feeWei": "266315912767170",
+      "txHash": "0xd75af60647fc526cf5431fb100fe8e11a8a833277ebe7316ae3e54a68fbd6f1c",
+      "blockNumber": 30
+    },
+    {
+      "label": "disputeRefund.open",
+      "gasUsed": "148138",
+      "gasPriceWei": "1016581676",
+      "feeWei": "150594376319288",
+      "txHash": "0x5302a169d2e778958630742ceb694070b1a8a66ec69591deb9cd2ba75d203967",
+      "blockNumber": 31
+    },
+    {
+      "label": "disputeRefund.evidence",
+      "gasUsed": "67895",
+      "gasPriceWei": "1014519202",
+      "feeWei": "68880781219790",
+      "txHash": "0xa85ff8f71ad5b343e70bb5690b88d1b12598ca1664f3f3c34007bb3838863b94",
+      "blockNumber": 32
+    },
+    {
+      "label": "disputeRefund.review",
+      "gasUsed": "52453",
+      "gasPriceWei": "1012708410",
+      "feeWei": "53119594229730",
+      "txHash": "0x5eb8bd0dcdb2a458a8e024fb954065714b2d1ff6cd533a27969e81524672c54d",
+      "blockNumber": 33
+    },
+    {
+      "label": "disputeRefund.resolve",
+      "gasUsed": "151759",
+      "gasPriceWei": "1011122637",
+      "feeWei": "153446960268483",
+      "txHash": "0xa20e23dd5ce667ae30dd10f033ae737c07ca9bf2d822083961aaaa8ea65c569c",
+      "blockNumber": 34
+    },
+    {
+      "label": "disputeRelease.mint",
+      "gasUsed": "151599",
+      "gasPriceWei": "1009739341",
+      "feeWei": "153075474356259",
+      "txHash": "0x9b6cfcfd522d89f43bfda46ff2121781b2a9ae13ae17289b49be26fee8b5ff18",
+      "blockNumber": 35
+    },
+    {
+      "label": "disputeRelease.approve",
+      "gasUsed": "48335",
+      "gasPriceWei": "1008528076",
+      "feeWei": "48747204553460",
+      "txHash": "0xf0128e633ead2790cad2c385861b10a80d1d4ff39c4c8b5034232e465623939e",
+      "blockNumber": 36
+    },
+    {
+      "label": "disputeRelease.list",
+      "gasUsed": "154470",
+      "gasPriceWei": "1007463785",
+      "feeWei": "155622930868950",
+      "txHash": "0xe774f8852aaf20871478000fe208ca019dfa23cbd19690b25bfd2b879c0012ea",
+      "blockNumber": 37
+    },
+    {
+      "label": "disputeRelease.buy",
+      "gasUsed": "261369",
+      "gasPriceWei": "1006535616",
+      "feeWei": "263077207418304",
+      "txHash": "0xd7aa9bec4127fd70e1a57c2fb9e13151744c42c3ea058cb336616b77fd236132",
+      "blockNumber": 38
+    },
+    {
+      "label": "disputeRelease.open",
+      "gasUsed": "148138",
+      "gasPriceWei": "1005725782",
+      "feeWei": "148986205893916",
+      "txHash": "0xb0708f299bc5285b2ec01f4c82e5b538d4f6187812d258330ffdbf64e411959d",
+      "blockNumber": 39
+    },
+    {
+      "label": "disputeRelease.evidence",
+      "gasUsed": "67895",
+      "gasPriceWei": "1005013594",
+      "feeWei": "68235397964630",
+      "txHash": "0x5a6d70af1557da68b45c7748a93f1d272d3e61a54b77b2a91ad8ba2d911c3b19",
+      "blockNumber": 40
+    },
+    {
+      "label": "disputeRelease.review",
+      "gasUsed": "52453",
+      "gasPriceWei": "1004388314",
+      "feeWei": "52683180234242",
+      "txHash": "0xd162046121866b2d870565e213f44ecad59716efe113a304204e566ccf740a98",
+      "blockNumber": 41
+    },
+    {
+      "label": "disputeRelease.resolve",
+      "gasUsed": "169805",
+      "gasPriceWei": "1003840734",
+      "feeWei": "170457175836870",
+      "txHash": "0x7aa5b86e099097a6b46ca04c9c24da6480a53e2ee7c8010ab77542b1f23f175e",
+      "blockNumber": 42
+    }
+  ]
+}

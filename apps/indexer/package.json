@@ -5,8 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts"
+    "start": "node worker.cjs",
+    "dev": "node worker.cjs"
   },
   "dependencies": {
     "@prisma/client": "^5.14.0",

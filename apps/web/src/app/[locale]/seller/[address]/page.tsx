@@ -7,6 +7,7 @@ import { Package, Plus, MapPin, Globe } from 'lucide-react';
 import { Avatar } from '@/components/Avatar';
 import { ProductCard, ProductCardProps } from '@/components/ProductCard';
 import { useTranslation } from '@/contexts/LanguageContext';
+import { PrivateDrafts } from '@/components/ChainControls';
 
 interface Seller {
   id: string; name: string | null; username: string; bio: string | null; createdAt: string;
@@ -65,6 +66,7 @@ export default function SellerProfilePage() {
         <p className="mt-5 text-xs text-muted">{vi ? 'Tham gia từ' : 'Member since'} {new Date(seller.createdAt).toLocaleDateString(vi ? 'vi-VN' : 'en-US', { month: 'long', year: 'numeric' })}</p>
       </div>
     </section>
+    {session?.user?.id === seller.id && <PrivateDrafts />}
     <section className="space-y-5">
       <h2 className="text-xl font-bold">{vi ? 'Mặt hàng đang bán' : 'Active listings'} <span className="font-normal text-muted">({seller.products.length})</span></h2>
       {seller.products.length ? <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{seller.products.map(product => <ProductCard key={product.id} {...product} imageUrl={product.imageUrl || ''} nftTokenId={product.nftTokenId || undefined} sellerId={seller.id} sellerUsername={name} />)}</div> : <div className="rounded-2xl border border-dashed border-line bg-surface px-6 py-14 text-center"><Package className="mx-auto mb-4 text-muted" size={36} /><p className="text-sm text-muted">{vi ? 'Shop chưa có mặt hàng đang bán.' : 'This shop has no active listings yet.'}</p></div>}

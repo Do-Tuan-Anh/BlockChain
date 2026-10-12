@@ -10,5 +10,11 @@ export interface Product {
   currency: string;
   imageUrl: string | null;
   nftTokenId: string | null;
+  status?: string;
+  chainScope?: string | null;
+  metadataUri?: string | null;
+  mintWallet?: string | null;
+  mintTxHash?: string | null;
+  listingId?: string | null;
   seller: { id: string; username: string; name?: string | null; walletAddress: string | null };
 }

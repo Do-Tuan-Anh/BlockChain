@@ -109,6 +109,12 @@ model Product {
   currency    String        @default("ETH")
   imageUrl    String?
   nftTokenId  String?
+  chainScope  String?
+  metadataUri String?
+  metadataJson Json?
+  mintWallet String?
+  mintTxHash String?
+  listingId  String?
   status      ProductStatus @default(DRAFT)
   sellerId    String
   seller      User          @relation("SellerProducts", fields: [sellerId], references: [id])
@@ -116,4 +122,34 @@ model Product {
   updatedAt   DateTime      @updatedAt
 
   @@map("products")
+  @@index([chainScope, metadataUri])
+}
+
+// Public event journal and rebuildable projections for the active deployment.
+model ChainEvent {
+  id String @id
+  scope String
+  blockNumber Int
+  blockHash String
+  transactionHash String
+  logIndex Int
+  contract String
+  name String
+  args Json
+  @@index([scope, blockNumber])
+}
+
+model ChainRecord {
+  scope String
+  kind String
+  key String
+  data Json
+  @@id([scope, kind, key])
+}
+
+model ChainCheckpoint {
+  scope String @id
+  blockNumber Int
+  blockHash String
+  updatedAt DateTime @updatedAt
 }

@@ -1,172 +1,48 @@
-# VeriMarket: Complete Presentation & Demonstration Guide
+# Demo TrustChain trong 3–5 phút
 
-This guide provides a step-by-step walkthrough to present and demonstrate **VeriMarket** to professors, technical evaluators, or investors.
+## Chuẩn bị
 
----
+Chạy theo [BLOCKCHAIN_SETUP.md](BLOCKCHAIN_SETUP.md). Đảm bảo web, PostgreSQL, IPFS, Hardhat và indexer hoạt động. Hai tài khoản web và hai ví riêng có ETH local; một ví trọng tài và tài khoản ADMIN nếu trình diễn phân xử. Dùng ảnh sản phẩm không chứa thông tin cá nhân.
 
-## 🎯 The 3-Minute Elevator Pitch
+Không đặt trước tokenId/orderId hoặc số dư giả trong slide. Ghi ID từ giao dịch đang chạy. Nếu dùng local, nói rõ local và không mở Etherscan như thể đó là tx testnet.
 
-> *"Traditional online peer-to-peer marketplaces (like eBay or Facebook Marketplace) suffer from two fatal flaws: **counterfeit goods** and **payment fraud**. Buyers risk paying for fake items, while sellers risk chargebacks and payment disputes.*
->
-> *Blockchain projects usually try to solve this by putting the entire marketplace on-chain, which is disastrous for user privacy (putting home addresses on a public ledger) and costs huge gas fees.*
->
-> *VeriMarket solves this with a **hybrid architecture**:*
-> 1. *We use **Ethereum smart contracts** for the financial settlement layer: a non-custodial marketplace, an automated escrow contract that locks buyer payment until physical delivery, and an ERC-721 token that serves as a **Digital Product Passport**.*
-> 2. *We use a **PostgreSQL database** for private application data: search, user profiles, private shipping addresses, carrier tracking numbers, and reviews. **Zero personal identifying information (PII) ever touches the public blockchain.**"*
+## Kịch bản chính khoảng 4 phút
 
----
+| Thời gian | Thao tác trên web | Lời giải thích / bằng chứng |
+|---|---|---|
+| 0:00–0:30 | Trang chủ, mở Kho NFT và kết nối ví người bán | Chỉ rõ chain ID 31337; phiên web khác với chữ ký liên kết ví |
+| 0:30–1:20 | Tạo sản phẩm, tải ảnh lên IPFS, lưu bản nháp | Đưa ảnh và JSON lên IPFS; dữ liệu riêng tư không được tự thêm vào metadata |
+| 1:20–2:00 | Mint, approve, createListing | Ba giao dịch thật; hiển thị tokenId, listing và tx hash |
+| 2:00–2:40 | Đổi sang tài khoản/ví người mua, mua qua Escrow | Số ETH thực gửi; ownerOf lúc này là Escrow, trạng thái HELD |
+| 2:40–3:20 | Xác nhận nhận hàng → giải ngân | Trạng thái RELEASED; NFT chuyển sang buyer; phí và tiền ròng tách biệt |
+| 3:20–4:00 | Kho NFT → xác minh, mở metadata | Đọc owner/tokenURI trực tiếp; CID_VERIFIED; đối chiếu receipt và báo cáo gas |
 
-## 🖥️ Demo Option 1: Live Web Application Clickthrough
+Giữ trang đủ lâu để hội đồng đọc số liệu. Giao dịch cần lâu hơn dự kiến thì ưu tiên chỉ rõ pending/confirmed, không đổi sang dữ liệu giả. Với Sepolia, quay trước vì thời gian xác nhận phụ thuộc mạng.
 
-The web frontend (`apps/web`) is built with **Next.js 14**, **Tailwind CSS**, and **wagmi/viem**.
+## Nhánh phân xử bổ sung
 
-### Step 1: Start the Local Blockchain Node
-Open a terminal in the root directory:
-```powershell
-npx.cmd hardhat node
-# or: npm.cmd run node
-```
-*This starts a local Ethereum JSON-RPC node at `http://127.0.0.1:8545` with 20 pre-funded test accounts.*
+Tạo đơn thứ hai, chưa xác nhận nhận hàng. Chọn file bằng chứng → mở tranh chấp → xem DISPUTED. Vào ADMIN với ví có ARBITRATOR_ROLE, đánh dấu xem xét và chọn refund buyer. Kiểm tra REFUNDED và ownerOf quay về seller. Có thể dùng test để chứng minh thêm ruling trả seller.
 
-### Step 2: Deploy the VeriMarket Smart Contracts
-In a second terminal:
-```powershell
-npm.cmd run deploy:verimarket
-```
-*This deploys `MarketplaceNFT.sol`, `FeeManager.sol` (2.5%), `Escrow.sol`, and `Marketplace.sol`, and exports the addresses to `data/verimarket-deployments.json`.*
+## Video có thể tái tạo
 
-### Step 3: Launch the Frontend Web Server
-In a third terminal:
-```powershell
-cd apps/web
-npm.cmd install
-npm.cmd run dev
-```
-Open your browser and navigate to: **`http://localhost:3000`**
+`npm.cmd run demo:record --prefix apps/web` chạy kịch bản browser có ghi hình và phụ đề hướng dẫn trong khoảng 3–5 phút. Video ghi rõ **local, ví test tự ký qua adapter EIP-1193, không phải MetaMask extension hoặc testnet công khai**. Giao dịch, IPFS và database vẫn thực thi thật.
 
----
+Kết quả đặt trong `.local/demo/`: video WebM, `evidence.json` chứa deployment/IDs/CID/tx hashes và bảng phụ đề. File lớn không được tự commit. Không chạy video demo cùng test reorg. Test tạo tài khoản/sản phẩm riêng và dọn bản ghi của chính nó sau khi ghi hình; chain vẫn lưu giao dịch. Nhóm có thể quay thủ công bằng MetaMask và đọc lời dẫn trên để thay video tự động.
 
-### Step 4: Step-by-Step Web Demonstration Flow
+Lần ghi ngày **12/10/2026** đã hoàn thành: video **3 phút 12,76 giây**, 1280×800, có phụ đề hướng dẫn tiếng Việt (không thu giọng nói), nằm tại `.local/demo/2026-10-12T03-52-21-919Z/trustchain-demo.webm`. Mở `index.html` cùng thư mục để xem. Đã kiểm tra khung hình listing và xác minh; năm receipt trong [bằng chứng lần ghi](evidence/demo-recording.json) đều có status 1. File JSON này là bằng chứng lịch sử local, không dùng thay manifest runtime và không tra được trên explorer công khai. Người clone repo cần tự chạy lệnh ghi hình vì video được gitignore.
 
-#### 1. Home Page (`http://localhost:3000`)
-- **What to show**:
-  - The hero banner emphasizing **trust-minimized P2P commerce**.
-  - The **Interactive Escrow Timeline Stepper**: Explain the 4 milestones (`Payment Escrowed` $\to$ `Item Shipped` $\to$ `Delivery Confirmed` $\to$ `Payment Released & NFT Transferred`).
-  - The featured physical goods catalog with the blue **"NFT #1"** verification badge.
-  - The three architectural callout cards explaining why personal data is kept off-chain.
+## Câu hỏi bảo vệ
 
-#### 2. Catalog & Discovery (`http://localhost:3000/explore`)
-- **What to show**:
-  - Click on category filters: **Sneakers**, **Electronics**, **Watches**, **Gaming**.
-  - Filter by condition: **New in Box**, **Pristine**, **Like New**.
-  - Highlight that fast filtering and search queries run against the database, not slow blockchain RPCs.
+**Blockchain nằm ở đâu?** Trong sáu Solidity contract. Cho xem receipt, gọi ownerOf/getEscrow và số dư Escrow; thay đổi database không thay thế được tx ký từ ví.
 
-#### 3. Product Details & On-Chain Verification (`http://localhost:3000/product/prod-001`)
-- **What to show**:
-  - Open the **Nike Air Max 1 '86 OG Big Bubble**.
-  - Show the **Blockchain & NFT Certificate Specs** card:
-    - Token ID: `#1`
-    - Contract Address: `0x5FbDB2315678afecb367f032d93F642f64180aa3`
-    - Metadata URI: `ipfs://QmMetadataCid...`
-    - Product Hash: `0xe4e6ab...` (tamper-proof cryptographic commitment)
-  - Show the Seller Reputation card (Alice: 5.0 Rating, 38 completed sales).
-  - Click **"Buy Now with Escrow"**:
-    - The interactive modal simulates the two-step wallet transaction.
-    - Demonstrates: Funds enter `Escrow.sol` and the NFT certificate is held in escrow custody.
+**Tại sao không dùng database cho mọi thứ?** DB phục vụ tài khoản và truy vấn; contract cung cấp quy tắc chuyển tài sản mà các bên có thể kiểm chứng. Vẫn có hạ tầng tập trung và quyền quản trị, nên không tuyên bố đã loại bỏ mọi niềm tin.
 
-#### 4. Seller Listing Studio (`http://localhost:3000/create-listing`)
-- **What to show**:
-  - Show how a seller creates a physical listing.
-  - Highlight the yellow **Privacy Protection Policy** box:
-    - *"Your personal information (real name, home address, phone number) is never written to IPFS or the blockchain. Only non-sensitive product traits (Brand, Model, Condition, Product Hash) are stored in the public NFT metadata."*
-  - Click **"Mint NFT & List on Marketplace"**:
-    - Shows Step 1: Minting NFT on-chain.
-    - Shows Step 2: Approving & listing on `Marketplace.sol`.
+**NFT có chứng minh hàng thật không?** Không. Nó chứng minh bản ghi số/quyền sở hữu; liên kết với hàng thật vẫn cần quy trình xác minh ngoài chuỗi.
 
-#### 5. Order Management & Physical Logistics (`http://localhost:3000/orders/1`)
-- **What to show**:
-  - Visual **Escrow Timeline** currently at `SHIPPED`.
-  - **Physical Shipment Tracking** box:
-    - Carrier: `FedEx Express`
-    - Tracking Number: `FX-99281-7729-US`
-    - Explains that logistics tracking is encrypted off-chain in PostgreSQL.
-  - The Buyer Action button: Click **"Confirm Delivery & Release Escrow"**.
-    - Watch the status update to `COMPLETED`.
-    - 97.5% net proceeds released to Alice.
-    - 2.5% protocol fee transferred to Treasury.
-    - NFT certificate transferred to Bob's wallet.
-  - The **Transaction-Verified Review Modal**:
-    - Bob submits a 5-star rating and comment.
-    - Explain that reviews are impossible to fake because the smart contract verifies that an order was settled before allowing a review.
+**Người mua không xác nhận thì sao?** Seller có thể claim sau 14 ngày tính từ ký quỹ nếu trạng thái còn HELD. Không có oracle hãng vận chuyển.
 
-#### 6. User Digital Certificate Vault (`http://localhost:3000/nfts`)
-- **What to show**:
-  - Shows all NFTs owned by the buyer's wallet.
-  - Displays the delivered Nike Air Max token with its verified attributes.
+**IPFS có lưu vĩnh viễn không?** Cần duy trì pin/replica/backup. CID giúp kiểm tra nội dung, không tự bảo đảm khả dụng.
 
-#### 7. Administrator Dispute Console (`http://localhost:3000/admin`)
-- **What to show**:
-  - Platform metrics: Total Escrow Volume (142.8 ETH), Active Escrows, Protocol Treasury.
-  - Active dispute queue: Demonstrates how contested orders can be resolved on-chain by the administrator:
-    - Click **"Rule for Buyer"** (Refund 100% ETH & return NFT to seller).
-    - Click **"Rule for Seller"** (Release funds to seller & transfer NFT to buyer).
+**Có chống đánh giá giả hoàn toàn không?** Chỉ số uy tín gắn thao tác contract; chưa chống một người tạo nhiều ví hoặc thông đồng.
 
----
-
-## ⚡ Demo Option 2: Instant Automated Terminal Simulation
-
-If you have only 2 minutes or want to show the smart contract execution instantly without clicking through the browser:
-
-```powershell
-npm run simulate:verimarket
-```
-
-**What this outputs in 5 seconds:**
-1. Deploys all 4 smart contracts on a local EVM runtime.
-2. Seller Alice creates IPFS metadata JSON (with zero PII).
-3. Alice mints NFT Token #1 and lists it for 0.50 ETH.
-4. Buyer Bob purchases the item; 0.50 ETH is locked into `Escrow.sol`.
-5. Alice inputs private carrier tracking (`FedEx Express`, `FX-99281-7729-US`) off-chain.
-6. Bob confirms delivery:
-   - Alice receives `+0.4875 ETH` (97.5% net proceeds).
-   - Protocol Treasury receives `+0.0125 ETH` (2.5% fee).
-   - NFT certificate transfers to Bob.
-7. Bob submits a 5-star review, updating Alice's reputation.
-
----
-
-## 🧪 Demo Option 3: Automated Test Suite Proof
-
-To prove that the smart contracts are secure against attacks:
-
-```powershell
-npm run test
-```
-
-**What to point out:**
-- **All 16 tests pass in 3 seconds**.
-- Point out test #4: **Reentrancy and double-release prevention**.
-- Point out test #5: **100% refund execution on cancellation**.
-- Point out test #6: **Dispute freezing & admin arbitration**.
-- Point out test #7: **14-day auto-release timeout**: Proving that sellers are protected if buyers ghost without confirming delivery.
-
----
-
-## 🎓 Questions Professors Typically Ask (and How to Answer)
-
-### Q1: "Why use an NFT for a physical product? Doesn't the buyer just want the physical item?"
-**Answer**:
-> *"The NFT serves as a **verifiable Digital Product Passport (DPP)**. For luxury goods, limited-edition sneakers, or electronics, the NFT contains an immutable cryptographic hash of the serial number and original inspection certificate. When the physical item is resold in the future, the new buyer can trace the chain of custody back to the original authorized sale, eliminating the counterfeit resale market."*
-
-### Q2: "Why not store everything on the blockchain?"
-**Answer**:
-> *"Storing personal delivery addresses, customer names, or carrier tracking numbers on a public ledger violates privacy laws (like GDPR) and dox'es users. Furthermore, storing product descriptions and search indices on-chain would incur prohibitive gas fees and make search queries painfully slow. We use blockchain only for what it does best: **immutable ownership tracking, trust-minimized escrow, and financial settlement**."*
-
-### Q3: "What happens if the buyer receives the item but refuses to confirm delivery?"
-**Answer**:
-> *"Our `Escrow.sol` contract implements a **14-day auto-release window (`claimTimeoutRelease`)**. If the carrier confirms physical delivery and the buyer does not open a dispute within 14 days, the seller can claim their payment directly from the contract. This prevents buyers from holding seller capital hostage."*
-
-### Q4: "How do you prevent fake reviews?"
-**Answer**:
-> *"On platforms like Amazon or eBay, fake reviews and review-farming are rampant. In VeriMarket, our backend verifies on-chain that an order was settled in `Escrow.sol` before accepting a review. You cannot review a seller unless you paid for and completed an actual transaction."*
-
+**Test pass có nghĩa an toàn tuyệt đối?** Không. Đây là bằng chứng cho các trường hợp đã kiểm thử, chưa có audit hay đánh giá production.

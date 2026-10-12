@@ -169,6 +169,8 @@ activemq-data/
 
 # Environments
 .env
+data/trustchain-deployments.json
+.local/
 .envrc
 .venv
 env/

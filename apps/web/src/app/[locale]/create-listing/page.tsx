@@ -5,6 +5,8 @@ import { useTranslation } from "../../../contexts/LanguageContext";
 import { Product } from "@/lib/products";
 import { ImagePlus, Package, Plus } from 'lucide-react';
 import { useClientReady } from '@/components/useClientReady';
+import { ProductBlockchain } from '@/components/ChainControls';
+import { uploadProductImage } from '@/lib/upload-image';
 
 export default function CreateListingPage() {
   const clientReady = useClientReady();
@@ -20,6 +22,8 @@ export default function CreateListingPage() {
   const [savedProduct, setSavedProduct] = useState<Product | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState("");
+  const [onchain, setOnchain] = useState(true);
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const categoryKeys = ["Sneakers", "Electronics", "Watches", "Gaming", "Collectibles", "Fashion"];
   const conditionKeys = ["New in Box", "Like New", "Good", "Fair", "Pristine"];
@@ -42,12 +46,17 @@ export default function CreateListingPage() {
           model,
           price,
           currency: "ETH",
-          imageUrl,
+          imageUrl: imageFile ? '' : imageUrl,
+          onchain,
         }),
       });
       const data = await res.json();
       if (!res.ok || !data.product?.id) throw new Error(data.error || t("common.error"));
       setSavedProduct(data.product);
+      if (imageFile) {
+        try { setSavedProduct(await uploadProductImage(data.product.id, imageFile)); }
+        catch (e) { setError((e as Error).message); }
+      }
       setStep("completed");
     } catch (error) {
       setError(error instanceof Error ? error.message : t("common.error"));
@@ -68,11 +77,13 @@ export default function CreateListingPage() {
           <div className="w-14 h-14 bg-positive/10 text-positive rounded-full flex items-center justify-center mx-auto text-3xl font-bold">
             ✓
           </div>
-          <h2 className="text-xl font-bold text-ink">{t("createListing.successTitle")}</h2>
+          <h2 className="text-xl font-bold text-ink">{onchain && savedProduct?.status !== 'LISTED' ? (locale === 'vi' ? 'Bản nháp đã lưu — tiếp tục đăng lên blockchain' : 'Draft saved — continue publishing on blockchain') : t("createListing.successTitle")}</h2>
           <p className="text-sm text-secondary max-w-md mx-auto">
-            {t("createListing.successDesc")} <strong>{savedProduct?.title}</strong> — <strong>{savedProduct?.price} {savedProduct?.currency}</strong>.
+            <strong>{savedProduct?.title}</strong> — <strong>{savedProduct?.price} {savedProduct?.currency}</strong>.
           </p>
           <p className="text-sm text-secondary">{savedProduct?.description}</p>
+          {error && <p role="alert" className="text-danger">{error}</p>}
+          {onchain && savedProduct && <div className="text-left"><ProductBlockchain product={savedProduct} onUpdated={setSavedProduct} /></div>}
           <a href={`/${locale}/product/${savedProduct?.id}`} className="block text-accent-soft font-semibold">{t("createListing.viewProduct")}</a>
           <a href={`/${locale}/profile`} className="block text-accent-soft font-semibold">{t("profile.yourListings")}</a>
           <div className="pt-4 flex flex-wrap justify-center gap-4">
@@ -91,6 +102,7 @@ export default function CreateListingPage() {
                 setBrand("");
                 setModel("");
                 setImageUrl("");
+                setImageFile(null);
                 setSavedProduct(null);
               }}
               className="bg-elevated hover:bg-line text-secondary font-semibold text-sm px-6 py-2.5 rounded-xl transition"
@@ -209,6 +221,8 @@ export default function CreateListingPage() {
                 </div>
               </div>
               <div>
+                <label className="block text-xs font-semibold text-secondary mb-2" htmlFor="listing-image-file">{locale === 'vi' ? 'Tải ảnh sản phẩm lên IPFS (JPG/PNG/WebP, tối đa 5 MB)' : 'Upload product image to IPFS (JPG/PNG/WebP, up to 5 MB)'}</label>
+                <input id="listing-image-file" type="file" accept="image/png,image/jpeg,image/webp" className="mb-4 block w-full text-sm" onChange={e => setImageFile(e.target.files?.[0] || null)} />
                 <label htmlFor="listing-image" className="block text-xs font-semibold text-secondary mb-1">{t("createListing.imageUrl")}</label>
                 <input id="listing-image" type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." className="w-full bg-inset border border-line rounded-lg p-2.5 text-sm" />
               </div>
@@ -237,6 +251,7 @@ export default function CreateListingPage() {
             {step === "saving" && t("profile.saving")}
             {step === "form" && t("createListing.submitButton")}
           </button>
+          <label className="flex items-start gap-3 text-sm text-secondary"><input type="checkbox" checked={onchain} onChange={e => setOnchain(e.target.checked)} /><span>{locale === 'vi' ? 'Đăng bán blockchain (IPFS + NFT + Escrow). Bỏ chọn để đăng tin thông thường, chưa có NFT.' : 'Blockchain listing (IPFS + NFT + Escrow). Uncheck for a regular listing without an NFT.'}</span></label>
           </aside>
           </fieldset>
         </form>

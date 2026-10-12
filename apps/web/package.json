@@ -12,6 +12,9 @@
     "typecheck": "tsc --noEmit",
     "test:products": "node --env-file=.env --test tests/auth.integration.test.cjs",
     "test:auth": "node --env-file=.env --test tests/auth.integration.test.cjs",
+    "test:chain": "node --env-file=.env --test tests/blockchain.integration.test.cjs",
+    "test:ipfs": "node --env-file=.env --test tests/ipfs.test.cjs",
+    "demo:record": "node --env-file=.env scripts/record-demo.cjs",
     "test:ui": "node --env-file=.env node_modules/@playwright/test/cli.js test"
   },
   "dependencies": {

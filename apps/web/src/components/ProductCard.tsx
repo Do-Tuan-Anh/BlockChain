@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { ArrowUpRight, Package } from 'lucide-react';
 import { useTranslation } from "../contexts/LanguageContext";
+import { mediaUrl } from '@/lib/media';
 
 export interface ProductCardProps {
   id: string;
@@ -38,7 +39,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     <div className="product-card">
       <div className="product-media group">
         {imageUrl && failedImage !== imageUrl ? <img
-          src={imageUrl}
+          src={mediaUrl(imageUrl)}
           alt={title}
           className="object-cover w-full h-full"
           onError={() => setFailedImage(imageUrl)}
