@@ -33,6 +33,7 @@ model User {
   passwordHash  String?
   sessionVersion Int      @default(0)
   avatarUrl     String?
+  coverUrl      String?
   bio           String?
   city          String?
   address       String?

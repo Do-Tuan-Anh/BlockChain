@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import sharp from 'sharp';
 
 test('account menu, profile editing and public shops', async ({ page, request }, testInfo) => {
-  test.setTimeout(120000);
+  test.setTimeout(180000);
   const prisma = new PrismaClient();
   const tag = randomUUID();
   const email = `menu-${tag}@example.test`;
@@ -22,10 +22,11 @@ test('account menu, profile editing and public shops', async ({ page, request },
     const response = await request.get(`/api/sellers/${owner.id}`);
     expect(response.status()).toBe(200);
     const { seller } = await response.json();
-    expect(Object.keys(seller).sort()).toEqual(['avatarUrl', 'bio', 'city', 'createdAt', 'id', 'image', 'name', 'products', 'username', 'website']);
+    expect(Object.keys(seller).sort()).toEqual(['avatarUrl', 'bio', 'city', 'coverUrl', 'createdAt', 'id', 'image', 'name', 'products', 'username', 'website']);
     expect(seller.products.map((product: { id: string }) => product.id)).toEqual([listing.id]);
     expect((await request.get('/api/sellers/nonexistent-test-shop')).status()).toBe(404);
     expect((await request.get('/api/me')).status()).toBe(401);
+    expect((await request.get('/api/me/transactions')).status()).toBe(401);
     expect((await request.get(`/api/products/${draft.id}`)).status()).toBe(404);
     expect((await (await request.get(`/api/products?status=DRAFT&sellerId=${owner.id}`)).json()).products).toEqual([]);
     await page.goto(`/vi/seller/${owner.id}`);
@@ -39,7 +40,7 @@ test('account menu, profile editing and public shops', async ({ page, request },
     await page.locator(`a[href="/vi/product/${listing.id}"]`).click();
     await expect(page.getByRole('heading', { name: listing.title, exact: true })).toBeVisible();
     await page.getByRole('link', { name: owner.name!, exact: true }).click();
-    await expect(page).toHaveURL(new RegExp(`/vi/seller/${owner.id}$`));
+    await expect(page).toHaveURL(new RegExp(`/vi/seller/${owner.id}$`), { timeout: 30000 });
 
     await page.goto('/en/login?next=/vi/profile');
     await page.getByLabel('Email or phone number', { exact: true }).fill(email);
@@ -53,7 +54,9 @@ test('account menu, profile editing and public shops', async ({ page, request },
     const trigger = page.getByRole('button', { name: /^Menu tài khoản:/ });
     await expect(page.getByRole('button', { name: 'Đăng xuất', exact: true })).toHaveCount(0);
     await trigger.click();
-    await expect(page.getByRole('menuitem')).toHaveText(['Trang cá nhân', 'Chỉnh sửa trang cá nhân', 'Cài đặt', 'Hướng dẫn', 'Đăng xuất']);
+    await expect(page.getByRole('menu').getByTestId('wallet-link-status')).toHaveText('Chưa liên kết ví');
+    await expect(page.getByRole('menu').getByTestId('wallet-link-status')).toHaveClass(/text-danger/);
+    await expect(page.getByRole('menuitem')).toHaveText(['Trang cá nhân', 'Chỉnh sửa trang cá nhân', 'Lịch sử giao dịch', 'Cài đặt', 'Hướng dẫn', 'Kết nối ví', 'Đăng xuất']);
     await expect(page.getByRole('menuitem').first()).toBeFocused();
     await page.keyboard.press('End');
     await expect(page.getByRole('menuitem', { name: 'Đăng xuất', exact: true })).toBeFocused();
@@ -66,6 +69,10 @@ test('account menu, profile editing and public shops', async ({ page, request },
     await page.locator('main').click({ position: { x: 4, y: 25 } });
     await expect(page.getByRole('menu')).toHaveCount(0);
     await trigger.click();
+    await page.getByRole('menuitem', { name: 'Lịch sử giao dịch', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Lịch sử giao dịch', exact: true })).toBeVisible();
+    await expect(page.getByText('Liên kết ví với tài khoản để xem lịch sử mua bán của bạn.', { exact: true })).toBeVisible();
+    await trigger.click();
     await page.getByRole('menuitem', { name: 'Chỉnh sửa trang cá nhân', exact: true }).click();
     await page.locator('#profile-name').fill('Updated Shop Owner');
     await page.locator('#profile-bio').fill('Updated public introduction');
@@ -74,12 +81,18 @@ test('account menu, profile editing and public shops', async ({ page, request },
     await page.locator('#profile-city').fill('Hồ Chí Minh');
     await page.locator('#profile-address').fill('123 Private Test Street');
     await page.locator('#profile-website').fill('https://example.com/my-shop');
+    const coverInput = page.getByLabel('Chọn ảnh bìa', { exact: true });
+    await coverInput.setInputFiles({ name: 'bad.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg/>') });
+    await expect(page.locator('main').getByRole('alert')).toContainText('Ảnh bìa không hợp lệ');
+    const cover = await sharp({ create: { width: 1600, height: 900, channels: 3, background: '#55d6c2' } }).jpeg().withMetadata().toBuffer();
+    await coverInput.setInputFiles({ name: 'cover.jpg', mimeType: 'image/jpeg', buffer: cover });
+    await expect(page.getByRole('img', { name: 'Ảnh bìa xem trước', exact: true })).toHaveAttribute('src', /^data:image\/jpeg;base64,/);
     const photoInput = page.getByLabel('Chọn ảnh đại diện', { exact: true });
     await photoInput.setInputFiles({ name: 'bad.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"></svg>') });
     await expect(page.locator('main').getByRole('alert')).toContainText('Ảnh không hợp lệ');
     const photo = await sharp({ create: { width: 400, height: 300, channels: 3, background: '#2563eb' } }).png().toBuffer();
     await photoInput.setInputFiles({ name: 'avatar.png', mimeType: 'image/png', buffer: photo });
-    await expect(page.locator('main img')).toHaveAttribute('src', /^data:image\/png;base64,/);
+    await expect(page.locator('main').getByRole('img', { name: 'Updated Shop Owner', exact: true })).toHaveAttribute('src', /^data:image\/png;base64,/);
     await page.locator('form button[type="submit"], form button:not([type])').click();
     await expect(page.getByRole('status')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Menu tài khoản: Updated Shop Owner', exact: true })).toBeVisible();
@@ -89,6 +102,10 @@ test('account menu, profile editing and public shops', async ({ page, request },
     expect(updated.seller.city).toBe('Hồ Chí Minh');
     expect(updated.seller.website).toBe('https://example.com/my-shop');
     expect(updated.seller.avatarUrl).toMatch(/^data:image\/webp;base64,/);
+    expect(updated.seller.coverUrl).toMatch(/^data:image\/webp;base64,/);
+    const coverMetadata = await sharp(Buffer.from(updated.seller.coverUrl.split(',')[1], 'base64')).metadata();
+    expect([coverMetadata.width, coverMetadata.height]).toEqual([1200, 400]);
+    expect(coverMetadata.exif).toBeUndefined();
     expect(JSON.stringify(updated)).not.toContain('123 Private Test Street');
     expect(updated.seller).not.toHaveProperty('address');
     const avatarMetadata = await sharp(Buffer.from(updated.seller.avatarUrl.split(',')[1], 'base64')).metadata();
@@ -96,7 +113,8 @@ test('account menu, profile editing and public shops', async ({ page, request },
     await expect(trigger.locator('img')).toHaveAttribute('src', updated.seller.avatarUrl);
     await page.reload();
     await expect(page.locator('#profile-address')).toHaveValue('123 Private Test Street');
-    await expect(page.locator('main img')).toHaveAttribute('src', updated.seller.avatarUrl);
+    await expect(page.locator('main').getByRole('img', { name: 'Updated Shop Owner', exact: true })).toHaveAttribute('src', updated.seller.avatarUrl);
+    await expect(page.getByRole('img', { name: 'Ảnh bìa xem trước', exact: true })).toHaveAttribute('src', updated.seller.coverUrl);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.screenshot({ path: testInfo.outputPath('profile-editor.png'), fullPage: true });
     const origin = new URL(page.url()).origin;
@@ -106,9 +124,13 @@ test('account menu, profile editing and public shops', async ({ page, request },
     expect((await page.request.put('/api/me', { headers: { origin }, data: { ...payload, website: 'javascript:alert(1)' } })).status()).toBe(400);
     expect((await page.request.put('/api/me', { headers: { origin }, data: { ...payload, avatarData: 'data:image/png;base64,' + Buffer.from('<svg></svg>').toString('base64') } })).status()).toBe(400);
     expect((await page.request.put('/api/me', { headers: { origin }, data: { ...payload, role: 'ADMIN' } })).status()).toBe(400);
+    expect((await page.request.put('/api/me', { headers: { origin }, data: { ...payload, coverData: 'data:image/png;base64,bm90LWFuLWltYWdl' } })).status()).toBe(400);
+    expect((await page.request.put('/api/me', { headers: { origin }, data: { ...payload, coverData: 'https://example.com/cover.png' } })).status()).toBe(400);
     await page.goto('/vi/profile');
     await expect(page.getByRole('heading', { name: 'Updated Shop Owner', exact: true })).toBeVisible();
     await expect(page.getByText('Hồ Chí Minh', { exact: true })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Ảnh bìa của Updated Shop Owner', exact: true })).toHaveAttribute('src', updated.seller.coverUrl);
+    await expect.poll(() => page.locator('.profile-cover').evaluate(el => Math.abs(el.getBoundingClientRect().width - el.parentElement!.clientWidth))).toBeLessThanOrEqual(1);
     await expect(page.getByText('123 Private Test Street')).toHaveCount(0);
     await page.screenshot({ path: testInfo.outputPath('updated-profile.png'), fullPage: true });
     await page.getByRole('contentinfo').getByRole('link', { name: 'Phân xử tranh chấp', exact: true }).click();
@@ -123,9 +145,11 @@ test('account menu, profile editing and public shops', async ({ page, request },
     await prisma.user.update({ where: { id: owner.id }, data: { role: 'BUYER' } });
     await page.goto('/vi/profile/edit');
     await page.getByRole('button', { name: 'Xóa ảnh', exact: true }).click();
+    await page.getByRole('button', { name: 'Xóa ảnh bìa', exact: true }).click();
     await page.getByRole('button', { name: /Lưu thay đổi/ }).click();
     await expect(page.getByRole('status')).toBeVisible();
     expect((await (await request.get(`/api/sellers/${owner.id}`)).json()).seller.avatarUrl).toBeNull();
+    expect((await (await request.get(`/api/sellers/${owner.id}`)).json()).seller.coverUrl).toBeNull();
     await expect(trigger.locator('img')).toHaveCount(0);
     await trigger.click();
     await page.getByRole('menuitem', { name: 'Cài đặt', exact: true }).click();
@@ -145,6 +169,8 @@ test('account menu, profile editing and public shops', async ({ page, request },
     await expect(page).toHaveURL(/\/vi\/admin$/);
     await expect(page.getByRole('heading', { name: 'Yêu cầu quyền quản trị viên', exact: true })).toBeVisible();
     await page.goto('/vi/settings');
+    await expect(page).toHaveURL(/\/vi\/login\?next=/);
+    await page.goto('/vi/transactions');
     await expect(page).toHaveURL(/\/vi\/login\?next=/);
     expect(failures).toEqual([]);
   } finally {

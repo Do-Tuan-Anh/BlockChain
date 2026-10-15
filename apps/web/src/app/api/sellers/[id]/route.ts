@@ -11,7 +11,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       where: { OR: [{ id }, { walletAddress: id }] },
       select: {
         id: true, username: true, name: true, bio: true, createdAt: true,
-        avatarUrl: true, image: true, city: true, website: true,
+        avatarUrl: true, image: true, coverUrl: true, city: true, website: true,
         products: {
           where: { status: 'LISTED' }, orderBy: { createdAt: 'desc' },
           select: { id: true, title: true, category: true, condition: true, price: true,

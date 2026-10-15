@@ -3,6 +3,7 @@
 import { BookOpen, Globe, LockKeyhole } from 'lucide-react';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { MetaMaskGuide } from './MetaMaskGuide';
 
 export function AccountSettings() {
   const { locale } = useTranslation();
@@ -33,6 +34,7 @@ export function AccountHelp() {
   ];
   return <div className="mx-auto max-w-3xl space-y-6 px-4 py-10 sm:px-6">
     <div><BookOpen className="mb-3 text-accent-soft" size={28} /><h1 className="text-3xl font-bold">{vi ? 'Hướng dẫn' : 'Help'}</h1><p className="mt-2 text-sm text-muted">{vi ? 'Bắt đầu với tài khoản và shop của bạn.' : 'Get started with your account and shop.'}</p></div>
+    <MetaMaskGuide />
     {guides.map((guide, index) => <section key={guide.href + index} className="space-y-3 rounded-2xl border border-line bg-surface p-6"><h2 className="font-semibold">{index + 1}. {guide.title}</h2><p className="text-sm leading-7 text-secondary">{guide.text}</p><a href={`/${locale}/${guide.href}`} className="inline-block text-sm font-semibold text-accent-soft hover:underline">{guide.action} →</a></section>)}
   </div>;
 }

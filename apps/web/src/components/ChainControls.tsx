@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { Interface, parseEther } from 'ethers';
+import { Interface, parseEther, formatEther } from 'ethers';
 import { Wallet, RefreshCw, ExternalLink } from 'lucide-react';
 import { apiJson, useWallet } from '@/contexts/WalletContext';
 import { useTranslation } from '@/contexts/LanguageContext';
@@ -9,6 +9,7 @@ import type { Product } from '@/lib/products';
 import abis from '@/lib/chain/abis.json';
 import { uploadProductImage } from '@/lib/upload-image';
 import { mediaUrl } from '@/lib/media';
+import { WalletLinkStatus } from './WalletLinkStatus';
 
 export function TxLink({ hash }: { hash?: string | null }) {
   const { config } = useWallet();
@@ -29,12 +30,28 @@ export function PrivateDrafts() {
 export function WalletPanel() {
   const w = useWallet(), { locale } = useTranslation(), vi = locale === 'vi';
   const [refreshing, setRefreshing] = useState(false), [error, setError] = useState('');
+  const [balance, setBalance] = useState<{ address: string; scope: string; balanceEth: string } | null>(null);
+  const [balanceError, setBalanceError] = useState(false);
+  useEffect(() => {
+    let active = true;
+    setBalance(null); setBalanceError(false);
+    if (w.linked && w.config) apiJson('/api/chain/balance').then(data => {
+      if (active) setBalance(data);
+    }).catch(() => { if (active) setBalanceError(true); });
+    return () => { active = false; };
+  }, [w.linked, w.snapshot]);
+  const currentBalance = balance?.address.toLowerCase() === w.linked.toLowerCase() && balance?.scope === w.config?.scope ? balance : null;
   return <section className="glass-panel p-5 space-y-3" aria-label={vi ? 'Ví blockchain' : 'Blockchain wallet'}>
     <div className="flex flex-wrap items-center gap-3 justify-between">
-      <div><p className="font-semibold flex gap-2 items-center"><Wallet size={18} />{w.config?.chainName || (vi ? 'Blockchain chưa sẵn sàng' : 'Blockchain not configured')}</p><p className="text-xs text-muted break-all mt-1">{w.linked || (vi ? 'Chưa liên kết ví' : 'No wallet linked')}</p></div>
+      <div className="min-w-0 space-y-2"><p className="font-semibold flex gap-2 items-center"><Wallet size={18} />{w.config?.chainName || (vi ? 'Blockchain chưa sẵn sàng' : 'Blockchain not configured')}</p><WalletLinkStatus />{w.linked && <p className="text-xs text-muted break-all">{w.linked}</p>}</div>
       <div className="flex flex-wrap gap-2"><button type="button" className="btn-primary" disabled={w.busy} onClick={() => w.connect().catch(() => {})}>{w.address ? (vi ? 'Kết nối lại ví' : 'Reconnect wallet') : (vi ? 'Kết nối ví' : 'Connect wallet')}</button>
       <button type="button" className="btn-secondary" disabled={w.busy || refreshing} onClick={async () => { setRefreshing(true); setError(''); try { await w.refresh(true); } catch (e) { setError((e as Error).message); } finally { setRefreshing(false); } }}><RefreshCw size={15} />{vi ? 'Đồng bộ' : 'Sync'}</button></div>
     </div>
+    {w.linked && <div className="rounded-xl border border-line bg-inset p-3 space-y-1">
+      <p className="text-xs text-muted">{vi ? 'Số dư ví đã liên kết' : 'Linked wallet balance'}</p>
+      <p className="font-semibold break-words" data-testid="wallet-balance">{currentBalance ? `${Number(currentBalance.balanceEth).toLocaleString(vi ? 'vi-VN' : 'en-US', { maximumFractionDigits: 6 })} ${w.config?.chainId === 31337 ? (vi ? 'ETH thử nghiệm' : 'test ETH') : 'ETH'}` : balanceError ? (vi ? 'Chưa đọc được số dư · hãy thử Đồng bộ' : 'Balance unavailable · try Sync') : (vi ? 'Đang đọc số dư…' : 'Loading balance…')}</p>
+      {w.config?.chainId === 31337 && <p className="text-xs text-muted">{vi ? 'Tiền demo trên mạng local, không có giá trị tiền thật. Khi mua cần đủ giá sản phẩm và phí gas.' : 'Local demo funds have no monetary value. Purchases need the item price plus gas.'}</p>}
+    </div>}
     {w.config && <p className="text-xs text-muted">Chain ID {w.config.chainId} · {vi ? 'Block đã đồng bộ' : 'Indexed block'}: {w.snapshot?.checkpoint?.blockNumber ?? '—'} · {w.config.confirmations} {vi ? 'block chờ an toàn' : 'confirmation blocks'}</p>}
     {w.status && <p role="status" className="text-sm text-positive">{w.status}</p>}
     {w.hash && <TxLink hash={w.hash} />}
@@ -48,7 +65,18 @@ export function ProductBlockchain({ product, onUpdated }: { product: Product; on
   const [working, setWorking] = useState(false), [error, setError] = useState(''), [stage, setStage] = useState('');
   const scopeMatches = !!w.config && (!product.chainScope || product.chainScope === w.config.scope);
   const listing = scopeMatches ? w.snapshot?.records.find(r => r.kind === 'listing' && r.key === product.listingId)?.data : null;
+  const activeListing = listing?.status === 'ACTIVE' && product.status === 'LISTED';
+  const oldDeployment = !!w.config && !!product.chainScope && !scopeMatches;
   const disabled = working || w.busy || !scopeMatches;
+  async function copyDraft() {
+    setWorking(true); setError('');
+    try {
+      // Reuse the authenticated create endpoint; never carry old NFT/listing identifiers forward.
+      const { title, description, category, condition, brand, model, price, imageUrl } = product;
+      const { product: draft } = await apiJson('/api/products', { title, description, category, condition, brand, model, price, imageUrl, currency: 'ETH', onchain: true });
+      window.location.assign(`/${locale}/product/${draft.id}`);
+    } catch (e) { setError((e as Error).message); setWorking(false); }
+  }
   async function updated() {
     await w.refresh(true);
     const { product: current } = await apiJson(`/api/products/${product.id}`);
@@ -112,14 +140,23 @@ export function ProductBlockchain({ product, onUpdated }: { product: Product; on
         try { onUpdated?.(await uploadProductImage(product.id, file)); setStage(vi ? 'Ảnh đã ghim trên IPFS' : 'Image pinned to IPFS'); }
         catch (e) { setError((e as Error).message); } finally { setWorking(false); }
       }} /></label><p className="text-xs text-muted">{vi ? 'JPG/PNG/WebP tối đa 5 MB. Ảnh được bỏ EXIF/GPS và ghim trước khi mint. Nếu dùng URL ngoài, hãy tải ảnh về rồi chọn tệp tại đây.' : 'JPG/PNG/WebP up to 5 MB. EXIF/GPS is stripped before pinning. For an external URL, download the image and choose the file here.'}</p>{product.imageUrl?.startsWith('ipfs://') && <img className="h-32 w-32 rounded-xl object-cover" src={mediaUrl(product.imageUrl)} alt={product.title} />}</div>}
-      {!scopeMatches && <p className="text-warning text-sm">{vi ? 'Sản phẩm thuộc deployment khác hoặc blockchain chưa được cấu hình.' : 'Different deployment or blockchain not configured.'}</p>}
+      {oldDeployment && <div role="status" className="rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm space-y-3">
+        <p className="font-semibold text-warning">{vi ? 'Chưa thể mua · bản đăng bán thuộc blockchain cũ' : 'Purchase unavailable · listing belongs to a previous deployment'}</p>
+        <p>{vi ? 'Mạng blockchain đã được triển khai lại. NFT và lệnh đăng bán cũ không dùng được trên mạng hiện tại; nạp thêm ETH không khôi phục được chúng.' : 'The blockchain was redeployed. The old NFT and listing cannot be used on this deployment; adding ETH will not restore them.'}</p>
+        <p>{owner ? (vi ? 'Tạo bản nháp mới từ thông tin này, sau đó ký lại Mint NFT & đăng bán. Bản ghi cũ vẫn được giữ nguyên.' : 'Create a new draft from these details, then sign Mint NFT & list again. The original record is preserved.') : (vi ? 'Nhờ người bán mở bài này, tạo bản nháp trên mạng hiện tại và mint/đăng bán lại. Sau đó mở bài mới để mua.' : 'Ask the seller to open this item, create a draft on the current network and mint/list it again. Purchase from the new item page.')}</p>
+        {owner && <button type="button" className="btn-secondary" disabled={working || w.busy} onClick={copyDraft}>{vi ? 'Tạo bản nháp trên mạng hiện tại' : 'Create draft on current network'}</button>}
+      </div>}
+      {!w.config && <p className="text-warning text-sm">{vi ? 'Chưa có thông tin blockchain. Bấm Đồng bộ để thử lại và xem lỗi kết nối.' : 'Blockchain information unavailable. Try Sync to retry and check connection errors.'}</p>}
       <p className="text-sm">{product.nftTokenId ? `NFT #${product.nftTokenId} · ${product.status}` : (vi ? 'Chưa mint NFT' : 'NFT not minted')}</p>
       {product.metadataUri && <p className="text-xs break-all text-muted">{product.metadataUri}</p>}
       {product.mintTxHash && <TxLink hash={product.mintTxHash} />}
       {product.nftTokenId && scopeMatches && <a className="block text-accent-soft" href={`/${locale}/verify/${product.nftTokenId}`}>{vi ? 'Xác minh chứng nhận' : 'Verify certificate'} →</a>}
       {owner && !['SOLD', 'ARCHIVED'].includes(product.status || '') && (!product.nftTokenId || product.status !== 'LISTED') && <button type="button" disabled={disabled} onClick={publish} className="btn-primary">{product.nftTokenId ? (vi ? 'Tiếp tục đăng bán' : 'Resume listing') : (vi ? 'Mint NFT & đăng bán' : 'Mint NFT & list')}</button>}
-      {listing?.status === 'ACTIVE' && product.status === 'LISTED' && <>
-        {owner ? <button className="btn-secondary" disabled={disabled} onClick={async () => { setWorking(true); setError(''); try { await w.run('Marketplace', 'cancelListing', [product.listingId]); await updated(); } catch (e) { setError((e as Error).message); } finally { setWorking(false); } }}>{vi ? 'Hủy đăng bán' : 'Cancel listing'}</button> : <><p className="text-sm text-muted">{vi ? 'Thanh toán ETH vào Escrow. NFT được giữ trong contract đến khi giải ngân hoặc hoàn tiền.' : 'Pay ETH into Escrow. The contract holds the NFT until release or refund.'}</p><button className="btn-primary" disabled={disabled || !w.linked || w.linked === product.mintWallet} onClick={buy}>{vi ? 'Mua qua Escrow' : 'Buy with Escrow'} · {product.price} ETH</button></>}
+      {!owner && scopeMatches && !activeListing && <p role="status" className="rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm text-warning">{product.status === 'SOLD' ? (vi ? 'Sản phẩm đã được mua.' : 'This item has already been purchased.') : !product.nftTokenId || !product.listingId ? (vi ? 'Chưa thể mua: người bán chưa hoàn tất mint NFT và đăng bán trên blockchain.' : 'Purchase unavailable: the seller has not completed minting and listing on blockchain.') : listing ? (vi ? 'Lệnh đăng bán không còn hoạt động.' : 'This listing is no longer active.') : (vi ? 'Chưa tìm thấy lệnh đăng bán trên mạng hiện tại. Bấm Đồng bộ để cập nhật; nếu vẫn không thấy, người bán cần kiểm tra lại.' : 'Listing not found on the current network. Try Sync; if it remains unavailable, ask the seller to check the listing.')}</p>}
+      {!owner && activeListing && !w.linked && <p className="text-sm text-warning">{vi ? 'Đăng nhập và kết nối ví người mua ở phía trên để mua hàng.' : 'Sign in and connect your buyer wallet above to purchase.'}</p>}
+      {!owner && activeListing && !!w.linked && w.linked.toLowerCase() === product.mintWallet?.toLowerCase() && <p className="text-sm text-warning">{vi ? 'Đây là ví người bán. Hãy dùng tài khoản người mua với một địa chỉ ví khác.' : 'This is the seller wallet. Use a buyer account linked to a different address.'}</p>}
+      {activeListing && <>
+        {owner ? <button className="btn-secondary" disabled={disabled} onClick={async () => { setWorking(true); setError(''); try { await w.run('Marketplace', 'cancelListing', [product.listingId]); await updated(); } catch (e) { setError((e as Error).message); } finally { setWorking(false); } }}>{vi ? 'Hủy đăng bán' : 'Cancel listing'}</button> : <><p className="text-sm text-muted">{vi ? 'Thanh toán ETH vào Escrow. NFT được giữ trong contract đến khi giải ngân hoặc hoàn tiền.' : 'Pay ETH into Escrow. The contract holds the NFT until release or refund.'}</p><button className="btn-primary" disabled={disabled || !w.linked || w.linked.toLowerCase() === product.mintWallet?.toLowerCase()} onClick={buy}>{vi ? 'Mua qua Escrow' : 'Buy with Escrow'} · {formatEther(String(listing!.price))} ETH</button></>}
       </>}
       {stage && <p role="status" className="text-sm text-accent-soft">{stage}</p>}
       {error && <p role="alert" className="text-sm text-danger break-words">{error}</p>}

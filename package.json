@@ -4,6 +4,7 @@
   "description": "AegisMed: Decentralized Pharmaceutical Cold-Chain Provenance & Dynamic NFT Digital Product Passport Protocol",
   "main": "index.js",
   "scripts": {
+    "demo:fund": "node scripts/fund-local.cjs",
     "ipfs:check": "node scripts/ipfs-maintenance.cjs check",
     "ipfs:backup": "node scripts/ipfs-maintenance.cjs backup",
     "ipfs:restore": "node scripts/ipfs-maintenance.cjs restore",

@@ -63,7 +63,7 @@ test('dark marketplace keeps listing, discovery, navigation and escrow interacti
     await expect(page.locator('.product-card')).toHaveCount(0);
 
     await page.goto('/vi');
-    await expect(page.locator('.hero')).toBeVisible();
+    await expect(page.locator('.hero-slide.is-active .hero')).toBeVisible();
     await expect(page.locator('.product-card').first()).toBeVisible();
     expect(await page.locator('body').evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgb(9, 11, 18)');
     await checkLayout('home');

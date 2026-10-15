@@ -38,6 +38,8 @@ Hardhat node giữ trạng thái khi tiến trình còn chạy, **không lưu ch
 
 Ví được cố định theo tài khoản sau khi liên kết để bảo toàn danh tính người đăng bán. Không có chức năng đổi ví tự do trong đợt tích hợp này. Sau khi reset Hardhat, MetaMask có thể cần xóa dữ liệu hoạt động/nonce của **ví local**.
 
+Menu tài khoản hiển thị địa chỉ ví đã liên kết và cho phép kết nối lại hoặc ngắt quyền kết nối của website. Khi đăng xuất, web yêu cầu MetaMask thu hồi quyền `eth_accounts`; thao tác này không xóa địa chỉ đã lưu và không chuyển NFT. MetaMask vẫn là ứng dụng độc lập nên web không thể khóa toàn bộ extension thay người dùng.
+
 ## 3. Kịch bản demo
 
 ### Người bán
@@ -71,6 +73,32 @@ Ví được cố định theo tài khoản sau khi liên kết để bảo toà
 - Contract hiện cho owner và một số bên giao dịch xử lý Escrow trực tiếp. Vì vậy đây là phân xử có quản trị, không phải một DAO hoàn toàn phi tập trung. UI báo rõ nếu Escrow đã xử lý ngoài hồ sơ phân xử.
 
 ## 4. Indexer và dữ liệu
+
+### Lịch sử mua bán và dòng tiền
+
+Mở menu tài khoản → **Lịch sử giao dịch** (`/vi/transactions`, `/en/transactions`). Trang yêu cầu đăng nhập, lấy địa chỉ ví đã liên kết từ tài khoản và đọc sự kiện Escrow đã được index trên deployment hiện tại; không nhận địa chỉ ví của người khác qua tham số URL.
+
+- Người mua: `EscrowDeposited` là khoản **trừ** giá mua; `EscrowRefunded` là khoản **cộng** hoàn tiền. Khi giải ngân không trừ thêm lần nữa.
+- Người bán: nhận đơn chỉ là dòng trạng thái, tiền vẫn ở Escrow. `EscrowReleased` mới là khoản **cộng** `sellerAmount` thực nhận, có hiển thị `feeAmount` riêng. Hoàn tiền cho người mua không được ghi là khoản trừ từ ví người bán vì tiền chưa từng được giải ngân cho họ.
+- Tổng đang ký quỹ gồm đơn HELD/DISPUTED của ví; không cộng vào tổng đã nhận. Dùng số nguyên wei để cộng tổng, không dùng số thực hoặc tự giả định mức phí.
+- Có bộ lọc tiền vào/tiền ra/trạng thái, phân trang 20 dòng, thời gian block, mã giao dịch và liên kết đơn/sản phẩm. Mạng có explorer thì mã giao dịch dẫn tới explorer; local hiển thị đầy đủ mã để đối chiếu.
+- Đây là lịch sử **mua bán TrustChain**, không phải sao kê toàn bộ ví: không bao gồm gas, giao dịch thất bại, nạp ETH demo bằng `hardhat_setBalance`, chuyển ví ngoài ứng dụng hoặc deployment cũ. Bấm **Đồng bộ lịch sử** để index thêm sự kiện mới.
+
+Kiểm thử riêng nhánh ký quỹ/tranh chấp/hoàn tiền và phân quyền: `npm.cmd run test:history --prefix apps/web` (cần web, DB và Hardhat local đang chạy). Kiểm thử tạo tài khoản/ví tạm, không reset node; giao dịch test vẫn lưu trên local chain.
+
+### Số dư demo và bài đăng thuộc blockchain cũ
+
+- Nhãn ví **xanh** là đã liên kết địa chỉ với tài khoản; **đỏ** là chưa liên kết. Dòng kết nối bên dưới là trạng thái kết nối MetaMask với website, độc lập với liên kết đã lưu.
+- Trang sản phẩm hiển thị số dư thật đọc từ RPC của ví đã liên kết. Bấm **Đồng bộ** sau khi nạp tiền. Trên local đây là ETH thử nghiệm, không quy đổi ra tiền thật; mua hàng cần giá sản phẩm cộng phí gas.
+- Từ thư mục gốc, cấp số dư tối thiểu 100.000 ETH cho địa chỉ người mua:
+
+  ```powershell
+  npm.cmd run demo:fund -- 0x90f79bf6eb2c4f870365e785982e1f101e93b906 100000
+  ```
+
+  Thay địa chỉ nếu dùng ví khác. Lệnh chỉ gọi RPC `127.0.0.1:8545`, kiểm tra client Hardhat và chain ID 31337 rồi dùng `hardhat_setBalance`. Không có giao dịch chuyển tiền, không cần private key, không giảm số dư đang cao hơn mục tiêu và không chạy trên Sepolia/mainnet. Số dư này mất khi node Hardhat bị reset; chạy lại lệnh trên node đang dùng để demo.
+- Nếu trang báo **bản đăng bán thuộc blockchain cũ**, nạp tiền không giải quyết được: người bán mở bài đó → **Tạo bản nháp trên mạng hiện tại** → **Mint NFT & đăng bán**, ký các yêu cầu MetaMask. Bản nháp sao chép thông tin/ảnh, không sao chép NFT, listing hay giao dịch cũ. Bản ghi cũ được giữ nguyên. Gửi URL bài mới cho người mua; khi indexer xác nhận listing hoạt động, nút **Mua qua Escrow** xuất hiện.
+- Không khởi động lại hoặc deploy lại blockchain chỉ để nạp ETH. Giữ node và indexer chạy trong suốt buổi demo.
 
 - `apps/indexer/worker.cjs` dùng cùng Prisma client/schema với web; logic chung ở `apps/web/src/lib/chain/indexer.cjs`.
 - Bắt đầu đọc từ block deploy, mỗi batch tối đa 500 block.

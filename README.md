@@ -130,6 +130,7 @@ Hướng dẫn chi tiết:
 - Giao diện tiếng Việt/tiếng Anh và responsive.
 - Giới hạn quyền truy cập hồ sơ, sản phẩm và trang quản trị.
 - Liên kết ví bằng chữ ký một lần, kiểm tra đúng chain/deployment.
+- Quản lý kết nối ví ngay trong menu tài khoản; đăng xuất sẽ yêu cầu MetaMask ngắt quyền của website nhưng vẫn giữ liên kết ví–tài khoản.
 - Lưu bản nháp, upload ảnh và ghim metadata IPFS, mint/approve/list từ ví người bán.
 - Kiểm tra CID, cấu hình node pin dự phòng, sao lưu/khôi phục IPFS bằng CAR.
 - Mua bán Escrow, giải ngân, hoàn tiền, timeout và phân xử bằng giao dịch thật.

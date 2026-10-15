@@ -21,7 +21,7 @@ function message(error: unknown) {
 interface WalletState {
   address: string; linked: string; config: ChainConfig | null; snapshot: ChainSnapshot | null;
   busy: boolean; status: string; error: string; hash: string;
-  connect: () => Promise<void>; refresh: (sync?: boolean) => Promise<ChainSnapshot>;
+  connect: () => Promise<void>; disconnect: () => Promise<void>; refresh: (sync?: boolean) => Promise<ChainSnapshot>;
   run: (name: ContractName, method: string, args: unknown[], value?: bigint, onSubmitted?: (hash: string) => void) => Promise<TransactionReceipt>;
   resume: (hash: string) => Promise<void>;
 }
@@ -86,6 +86,17 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     } catch (e) { setError(message(e)); throw e; }
     finally { lock.current = false; setBusy(false); }
   }
+  async function disconnect() {
+    if (lock.current) return;
+    lock.current = true; setBusy(true); setError('');
+    try {
+      const eth = injected();
+      if (eth) await eth.request({ method: 'wallet_revokePermissions', params: [{ eth_accounts: {} }] });
+      setAddress(''); setHash('');
+      setStatus(vi ? 'Đã ngắt kết nối ví khỏi website' : 'Wallet disconnected from this website');
+    } catch (e) { setError(message(e)); throw e; }
+    finally { lock.current = false; setBusy(false); }
+  }
   async function run(name: ContractName, method: string, args: unknown[], value?: bigint, onSubmitted?: (hash: string) => void) {
     if (lock.current) throw new Error('TRANSACTION_IN_PROGRESS');
     lock.current = true; setBusy(true); setError(''); setHash('');
@@ -122,6 +133,6 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     if (!receipt || receipt.status !== 1) throw new Error('TRANSACTION_REVERTED');
     await refresh(true);
   }
-  return <Context.Provider value={{ address, linked, config: snapshot?.config || null, snapshot, busy, status, error, hash, connect, refresh, run, resume }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ address, linked, config: snapshot?.config || null, snapshot, busy, status, error, hash, connect, disconnect, refresh, run, resume }}>{children}</Context.Provider>;
 }
 export function useWallet() { const value = useContext(Context); if (!value) throw new Error('WalletProvider missing'); return value; }

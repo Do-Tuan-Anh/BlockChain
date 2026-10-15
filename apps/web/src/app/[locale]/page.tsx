@@ -5,6 +5,7 @@ import { ArrowRight, ArrowUpRight, Blocks, Fingerprint, Layers3, LockKeyhole, Pa
 import { ProductCard } from '../../components/ProductCard';
 import { EscrowTimeline } from '../../components/EscrowTimeline';
 import { useTranslation } from '../../contexts/LanguageContext';
+import { HomeHero } from '@/components/HomeHero';
 
 export default function HomePage() {
   const { t, locale } = useTranslation();
@@ -26,7 +27,7 @@ export default function HomePage() {
   }, []);
 
   return <div className="page-shell space-y-14">
-    <section className="hero">
+    <HomeHero><section className="hero">
       <div className="relative z-10 min-w-0">
         <p className="eyebrow"><span className="h-1.5 w-1.5 rounded-full bg-positive" />TRUSTCHAIN / P2P MARKETPLACE</p>
         <h1 className="hero-title">{vi ? 'Trao giá trị.' : 'Exchange value.'}<br /><span className="gradient-text">{vi ? 'Kết nối niềm tin.' : 'Connect with trust.'}</span></h1>
@@ -41,7 +42,7 @@ export default function HomePage() {
         <div className="floating-card bottom" aria-hidden="true"><span className="flex h-10 w-10 items-center justify-center rounded-xl border border-positive/20 bg-positive/10 text-positive"><LockKeyhole size={20} /></span><div><p className="text-[10px] uppercase tracking-wider text-muted">Smart contract</p><p className="mt-1 text-sm font-semibold">Escrow Protocol</p></div></div>
         <p className="hero-caption">{vi ? 'MINH HỌA KIẾN TRÚC · NFT + ESCROW' : 'ARCHITECTURE CONCEPT · NFT + ESCROW'}</p>
       </div>
-    </section>
+    </section></HomeHero>
 
     <section className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="eyebrow mb-2">THE MARKETPLACE</p><h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{vi ? 'Khám phá mới nhất' : 'Fresh on the marketplace'}</h2><p className="mt-2 text-sm text-muted">{vi ? 'Những mặt hàng vừa được cộng đồng đăng bán.' : 'The latest products listed by the community.'}</p></div><a href={`/${locale}/explore`} className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-accent-soft hover:text-ink">{t('home.viewAll')}</a></div>

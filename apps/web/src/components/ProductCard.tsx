@@ -36,7 +36,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const [failedImage, setFailedImage] = useState<string | null>(null);
 
   return (
-    <div className="product-card">
+    <div className="product-card group relative">
       <div className="product-media group">
         {imageUrl && failedImage !== imageUrl ? <img
           src={mediaUrl(imageUrl)}
@@ -63,7 +63,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <h3 className="font-semibold text-ink line-clamp-2 text-base leading-6" title={title}>{title}</h3>
           
           <div className="flex items-center text-xs text-secondary mt-2">
-            <span>{t("product.by")} {sellerId ? <a href={`/${locale}/seller/${encodeURIComponent(sellerId)}`} className="font-semibold text-accent-soft hover:underline">{sellerUsername}</a> : <strong className="text-ink">{sellerUsername}</strong>}</span>
+            <span>{t("product.by")} {sellerId ? <a href={`/${locale}/seller/${encodeURIComponent(sellerId)}`} className="relative z-20 font-semibold text-accent-soft hover:underline">{sellerUsername}</a> : <strong className="text-ink">{sellerUsername}</strong>}</span>
             {sellerRating && <span className="text-warning font-medium ml-2">★ {sellerRating}</span>}
           </div>
         </div>
@@ -77,7 +77,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
           <a
             href={`/${locale}/product/${encodeURIComponent(id)}`}
-            className="inline-flex w-full items-center justify-between gap-2 rounded-xl border border-line bg-elevated px-3 py-3 text-xs font-semibold text-ink transition hover:border-accent/50 hover:text-accent-soft"
+            aria-label={`${t('createListing.viewProduct')}: ${title}`}
+            className="product-card-link inline-flex w-full items-center justify-between gap-2 rounded-xl border border-line bg-elevated px-3 py-3 text-xs font-semibold text-ink transition hover:border-accent/50 hover:text-accent-soft"
           >
             {t("createListing.viewProduct")}<ArrowUpRight size={16} aria-hidden="true" />
           </a>

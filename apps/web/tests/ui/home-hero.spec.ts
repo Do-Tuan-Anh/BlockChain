@@ -1,0 +1,94 @@
+import { test, expect } from '@playwright/test';
+import { PrismaClient } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
+import sharp from 'sharp';
+
+test('real featured products, permanent brand slide, autoplay, swipe and whole-card navigation', async ({ page, request }, testInfo) => {
+  test.setTimeout(150000);
+  const prisma = new PrismaClient(), tag = randomUUID();
+  const owner = await prisma.user.create({ data: { name: `Featured seller ${tag}` } });
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  try {
+    const image = 'data:image/png;base64,' + (await sharp({ create: { width: 640, height: 480, channels: 3, background: '#5264da' } }).png().toBuffer()).toString('base64');
+    const products = [];
+    for (let i = 0; i < 8; i++) products.push(await prisma.product.create({ data: { sellerId: owner.id, title: `Featured ${i} ${tag}`, description: 'A real test listing for the homepage carousel.', category: 'Collectibles', condition: 'Good', imageUrl: image, price: '0.2', status: 'LISTED' } }));
+    const draft = await prisma.product.create({ data: { sellerId: owner.id, title: `Draft ${tag}`, description: 'Private draft', category: 'Other', condition: 'New', price: '1', status: 'DRAFT' } });
+    const stale = await prisma.product.create({ data: { sellerId: owner.id, title: `Old chain ${tag}`, description: 'Old deployment', category: 'Other', condition: 'New', price: '1', status: 'LISTED', chainScope: 'old-test-scope' } });
+    const first = await (await request.get('/api/products/featured')).json();
+    const again = await (await request.get('/api/products/featured')).json();
+    expect(first.products).toHaveLength(6);
+    const ids = first.products.map((p: any) => p.id);
+    expect(new Set(ids).size).toBe(6);
+    expect(ids).not.toContain(draft.id); expect(ids).not.toContain(stale.id);
+    if (first.rotation === again.rotation) expect(again.products.map((p: any) => p.id)).toEqual(ids);
+    expect(first.refreshAt).toBe((first.rotation + 1) * 1800000);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/vi');
+    const carousel = page.getByRole('region', { name: 'Giới thiệu TrustChain và sản phẩm nổi bật', exact: true });
+    await expect(carousel.getByTestId('hero-product')).toHaveCount(6);
+    await expect(carousel.getByTestId('hero-intro')).toHaveAttribute('aria-hidden', 'false');
+    await expect(page.getByRole('heading', { name: /Trao giá trị/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Bật tự chuyển', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Slide sau', exact: true }).click();
+    const activeProduct = carousel.locator('.hero-slide.is-active[data-product-id]');
+    await expect(activeProduct).toBeVisible();
+    const activeId = await activeProduct.getAttribute('data-product-id');
+    await expect(carousel.getByTestId('hero-intro')).toHaveAttribute('aria-hidden', 'true');
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath('featured-dark.png'), fullPage: true });
+    await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
+    await page.screenshot({ path: testInfo.outputPath('featured-light.png'), fullPage: true });
+    await page.getByRole('link', { name: 'Khám phá sản phẩm', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/vi/product/${activeId}$`));
+    await page.goto('/vi');
+    await expect(carousel.getByTestId('hero-product')).toHaveCount(6);
+    await page.getByRole('button', { name: 'Slide trước', exact: true }).click();
+    await expect(carousel.getByTestId('hero-product').last()).toHaveAttribute('aria-hidden', 'false');
+    await page.getByRole('button', { name: 'Slide sau', exact: true }).click();
+    await expect(carousel.getByTestId('hero-intro')).toHaveAttribute('aria-hidden', 'false');
+    const slides = carousel.locator('.hero-slides');
+    await slides.focus(); await page.keyboard.press('ArrowRight');
+    await expect(carousel.getByTestId('hero-product').first()).toHaveAttribute('aria-hidden', 'false');
+    await slides.dispatchEvent('pointerdown', { pointerType: 'touch', clientX: 300, clientY: 200 });
+    await slides.dispatchEvent('pointerup', { pointerType: 'touch', clientX: 80, clientY: 208 });
+    await expect(carousel.getByTestId('hero-product').nth(1)).toHaveAttribute('aria-hidden', 'false');
+    // Swiping across a linked image must not accidentally navigate to that product.
+    await activeProduct.locator('a').first().dispatchEvent('click');
+    await expect(page).toHaveURL(/\/vi$/);
+    await page.getByRole('button', { name: 'Giới thiệu TrustChain', exact: true }).click();
+    await page.getByRole('button', { name: 'Bật tự chuyển', exact: true }).click();
+    await page.evaluate(() => (document.activeElement as HTMLElement)?.blur());
+    await page.mouse.move(0, 0);
+    await expect(carousel.getByTestId('hero-intro')).toHaveAttribute('aria-hidden', 'true', { timeout: 10000 });
+    await page.getByRole('button', { name: 'Tạm dừng tự chuyển', exact: true }).click();
+    const paused = await carousel.locator('.hero-slide.is-active').getAttribute('data-product-id');
+    await page.evaluate(() => (document.activeElement as HTMLElement)?.blur());
+    await page.mouse.move(0, 0);
+    await page.waitForTimeout(7000); // Assert that a full autoplay interval does not advance a paused slideshow.
+    expect(await carousel.locator('.hero-slide.is-active').getAttribute('data-product-id')).toBe(paused);
+    await page.goto(`/vi/explore?q=${encodeURIComponent(products[0].title)}`);
+    const card = page.locator('.product-card');
+    await expect(card).toHaveCount(1);
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await card.hover();
+    await expect.poll(() => card.locator('.product-media img').evaluate(el => getComputedStyle(el).transform)).not.toBe('none');
+    await card.click({ position: { x: 20, y: 20 } });
+    await expect(page).toHaveURL(new RegExp(`/vi/product/${products[0].id}$`));
+    await page.goBack();
+    await page.getByRole('link', { name: owner.name!, exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/vi/seller/${owner.id}$`));
+    // Help exists in both languages, including the actual deployment details.
+    await page.goto('/vi/help');
+    await expect(page.getByRole('heading', { name: 'Hướng dẫn MetaMask', exact: true })).toBeVisible();
+    await page.getByText('3. Chọn đúng mạng', { exact: true }).click();
+    await expect(page.locator('#metamask')).toContainText('31337');
+    await page.goto('/en/help');
+    await expect(page.getByRole('heading', { name: 'MetaMask guide', exact: true })).toBeVisible();
+    expect(errors).toEqual([]);
+  } finally {
+    await prisma.product.deleteMany({ where: { sellerId: owner.id } });
+    await prisma.user.delete({ where: { id: owner.id } });
+    await prisma.$disconnect();
+  }
+});

@@ -12,6 +12,7 @@ import { PrivateDrafts } from '@/components/ChainControls';
 interface Seller {
   id: string; name: string | null; username: string; bio: string | null; createdAt: string;
   avatarUrl: string | null; image: string | null; city: string | null; website: string | null;
+  coverUrl: string | null;
   products: (Omit<ProductCardProps, 'sellerUsername' | 'imageUrl' | 'nftTokenId'> & { imageUrl: string | null; nftTokenId: string | null })[];
 }
 
@@ -47,7 +48,7 @@ export default function SellerProfilePage() {
   return <div className="mx-auto max-w-7xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
     <a href={`/${locale}/explore`} className="text-sm font-medium text-accent-soft hover:underline">← {vi ? 'Khám phá mặt hàng' : 'Explore products'}</a>
     <section className="overflow-hidden rounded-3xl border border-line bg-surface">
-      <div className="profile-cover" aria-hidden="true" />
+      <div className="profile-cover !h-auto w-full min-h-36 max-h-80 aspect-[3/1]">{seller.coverUrl && <img src={seller.coverUrl} alt={vi ? `Ảnh bìa của ${name}` : `${name}'s cover photo`} className="absolute inset-0 h-full w-full object-cover" />}</div>
       <div className="px-6 pb-8 sm:px-8">
         <div className="-mt-10 mb-5 flex flex-wrap items-end justify-between gap-4">
           <Avatar src={seller.avatarUrl || seller.image} name={name} className="relative h-28 w-28 border-4 border-surface text-4xl shadow-xl" />

@@ -41,11 +41,14 @@ test('wallet → IPFS → NFT → listing → escrow → release in the real UI'
     await page.getByLabel('Email or phone number', { exact: true }).fill(email);
     await page.getByLabel('Password', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-    await expect(page).toHaveURL(new RegExp(destination + '$'));
+    await expect(page).toHaveURL(new RegExp(destination + '$'), { timeout: 30000 });
   }
   async function connect() {
     await page.getByRole('button', { name: 'Connect wallet', exact: true }).click();
     await expect(page.getByText('Wallet linked', { exact: true })).toBeVisible();
+    await expect(page.locator('main').getByTestId('wallet-link-status')).toHaveText('Wallet associated');
+    await expect(page.locator('main').getByTestId('wallet-link-status')).toHaveClass(/text-positive/);
+    await expect(page.getByTestId('wallet-balance')).toContainText('test ETH');
   }
   try {
     const funding = await provider.getSigner(0);
@@ -76,6 +79,7 @@ test('wallet → IPFS → NFT → listing → escrow → release in the real UI'
       (window as any).ethereum = { request: (args: unknown) => (window as any).testWalletRpc(args), on: () => {}, removeListener: () => {} };
     });
     await login(users[0].email!, '/en/create-listing');
+    expect((await page.request.get('/api/chain/balance')).status()).toBe(409);
     await chapter('1. TrustChain — demo local', 'Hardhat chain 31337. Ví test ký tự động qua adapter EIP-1193; đây không phải MetaMask extension hoặc testnet. Các giao dịch, IPFS và database bên dưới là thật.');
     await page.locator('#listing-title').fill(recording ? 'TrustChain — đồng hồ minh họa' : `UI chain ${tag}`);
     await page.locator('#listing-description').fill('Browser test product, real IPFS and local blockchain.');
@@ -83,7 +87,7 @@ test('wallet → IPFS → NFT → listing → escrow → release in the real UI'
     await page.locator('#listing-image-file').setInputFiles({ name: 'product.png', mimeType: 'image/png', buffer: await sharp({ create: { width: 128, height: 128, channels: 3, background: '#55d6c2' } }).png().toBuffer() });
     await chapter('2. Sản phẩm công khai và IPFS', 'Thông tin sản phẩm và ảnh minh họa sẽ được lưu thành bản nháp. Server chuẩn hóa ảnh, bỏ EXIF/GPS rồi pin ảnh và metadata. Không tự đưa địa chỉ hay email tài khoản lên IPFS.');
     await page.locator('form button[type="submit"]').click();
-    await expect(page.getByRole('heading', { name: /Draft saved/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Draft saved/ })).toBeVisible({ timeout: 45000 });
     const draft = await prisma.product.findFirstOrThrow({ where: { sellerId: users[0].id } });
     await page.goto('/en/profile');
     await expect(page.getByRole('heading', { name: 'Your drafts · Resume publishing' })).toBeVisible();
@@ -92,20 +96,60 @@ test('wallet → IPFS → NFT → listing → escrow → release in the real UI'
     await connect();
     await page.getByRole('button', { name: 'Mint NFT & list', exact: true }).click();
     await expect(page.getByText('Listed on blockchain', { exact: true })).toBeVisible({ timeout: 90000 });
-    const product = await prisma.product.findFirstOrThrow({ where: { sellerId: users[0].id } });
+    let product = await prisma.product.findFirstOrThrow({ where: { sellerId: users[0].id } });
     expect(product.status).toBe('LISTED'); expect(product.nftTokenId).toBeTruthy();
     expect(product.imageUrl).toMatch(/^ipfs:\/\//);
     await chapter('4. NFT và listing đã tồn tại trên chain', `NFT #${product.nftTokenId}, listing #${product.listingId}. Web chỉ đánh dấu LISTED sau khi đọc sự kiện thật. Metadata chứa CID ảnh thay vì phụ thuộc URL ảnh bên ngoài.`);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.evaluate(() => scrollTo(0, 0));
     await page.screenshot({ path: testInfo.outputPath('real-listing.png'), fullPage: true });
+    if (!recording) {
+      // Simulate the stale DB record left by a previous deployment, without resetting the live node.
+      const original = await prisma.product.update({ where: { id: product.id }, data: { chainScope: 'previous-test-deployment' } });
+      await page.reload();
+      await expect(page.getByText('Purchase unavailable · listing belongs to a previous deployment', { exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: /Buy with Escrow/ })).toHaveCount(0);
+      await page.getByRole('button', { name: 'Create draft on current network', exact: true }).click();
+      await expect(page).not.toHaveURL(new RegExp(`/product/${original.id}$`));
+      const copyId = new URL(page.url()).pathname.split('/').pop()!;
+      const copy = await prisma.product.findUniqueOrThrow({ where: { id: copyId } });
+      expect(copy.status).toBe('DRAFT');
+      expect([copy.chainScope, copy.nftTokenId, copy.listingId, copy.mintTxHash, copy.metadataUri]).toEqual([null, null, null, null, null]);
+      expect(copy.imageUrl).toBe(original.imageUrl);
+      expect(copy.sellerId).toBe(original.sellerId);
+      expect(await prisma.product.findUnique({ where: { id: original.id } })).toEqual(original);
+      await page.getByRole('button', { name: 'Mint NFT & list', exact: true }).click();
+      await expect(page.getByText('Listed on blockchain', { exact: true })).toBeVisible({ timeout: 90000 });
+      product = await prisma.product.findUniqueOrThrow({ where: { id: copyId } });
+      expect(product.status).toBe('LISTED');
+      expect(product.chainScope).not.toBe(original.chainScope);
+      await context.clearCookies(); active = buyer;
+      await login(users[1].email!, `/en/product/${original.id}`);
+      await expect(page.getByText('Purchase unavailable · listing belongs to a previous deployment', { exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: /Create draft on current network|Buy with Escrow/ })).toHaveCount(0);
+    }
     await context.clearCookies(); active = buyer;
     await login(users[1].email!, `/en/product/${product.id}`);
     await connect();
+    const balanceResponse = await page.request.get('/api/chain/balance');
+    expect(balanceResponse.status()).toBe(200);
+    const balance = await balanceResponse.json();
+    expect(balance.address).toBe(buyer.address.toLowerCase());
+    expect(balance.balanceWei).toBe(parseEther('3').toString());
+    await page.getByRole('button', { name: /^Account menu:/ }).click();
+    await expect(page.getByRole('menu').getByTestId('wallet-link-status')).toHaveText('Wallet associated');
+    await page.getByRole('menuitemradio', { name: 'Light', exact: true }).click();
+    await page.screenshot({ path: testInfo.outputPath('linked-wallet-light.png'), fullPage: true });
+    await page.getByRole('menuitemradio', { name: 'Dark', exact: true }).click();
+    await page.screenshot({ path: testInfo.outputPath('linked-wallet-dark.png'), fullPage: true });
+    await page.keyboard.press('Escape');
     await chapter('5. Đổi sang người mua', 'Đây là tài khoản web và ví khác người bán. Mua qua Escrow gửi 0,15 ETH thử nghiệm; contract kiểm tra giá và chuyển NFT vào nơi ký quỹ trong cùng transaction.');
     await page.getByRole('button', { name: /Buy with Escrow/ }).click();
     await expect(page).toHaveURL(/\/en\/orders\/\d+$/, { timeout: 60000 });
     await expect(page.getByText('HELD', { exact: true })).toBeVisible();
+    const heldHistory = await (await page.request.get('/api/me/transactions')).json();
+    expect(heldHistory.totals).toEqual({ incomingWei: '0', outgoingWei: parseEther('0.15').toString(), escrowWei: parseEther('0.15').toString() });
+    expect(heldHistory.entries.map((e: any) => e.kind)).toEqual(['PURCHASE']);
     await chapter('6. Đang ký quỹ — HELD', 'Tiền và NFT đang do Escrow giữ. Chưa xác nhận nhận hàng thì chưa trả tiền theo luồng bình thường. Có thể mở tranh chấp bằng hash bằng chứng; nhánh đó được kiểm chứng trong bộ test.');
     await page.getByRole('button', { name: 'Received item · Release payment', exact: true }).click();
     await expect(page.getByText('RELEASED', { exact: true })).toBeVisible({ timeout: 60000 });
@@ -119,6 +163,36 @@ test('wallet → IPFS → NFT → listing → escrow → release in the real UI'
     await expect(page.getByText(buyer.address, { exact: true })).toBeVisible();
     await expect(page.getByText('CID_VERIFIED', { exact: true })).toBeVisible();
     await chapter('8. Đối chiếu trực tiếp', 'Trang này đọc ownerOf và tokenURI từ RPC tại một block, rồi tính lại CID metadata. NFT chứng minh bản ghi số và quyền sở hữu, không tự chứng minh hàng vật lý chính hãng.');
+    if (!recording) {
+      await page.getByRole('button', { name: /^Account menu:/ }).click();
+      await page.getByRole('menuitem', { name: 'Transaction history', exact: true }).click();
+      await expect(page.getByRole('heading', { name: 'Transaction history', exact: true })).toBeVisible();
+      await expect(page.getByTestId('history-outgoing')).toHaveText('−0.15 ETH');
+      await expect(page.getByTestId('history-incoming')).toHaveText('+0 ETH');
+      await expect(page.getByTestId('history-escrow')).toHaveText('0 ETH');
+      await expect(page.getByTestId('history-entry')).toHaveCount(2);
+      await page.getByRole('button', { name: 'Money out', exact: true }).click();
+      await expect(page.getByTestId('history-entry')).toHaveCount(1);
+      await expect(page.getByTestId('history-amount')).toHaveText('−0.15 ETH');
+      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await page.screenshot({ path: testInfo.outputPath('buyer-history.png'), fullPage: true });
+      await page.getByRole('link', { name: 'View order →', exact: true }).click();
+      await expect(page.getByText('RELEASED', { exact: true })).toBeVisible();
+      await context.clearCookies(); active = seller;
+      await login(users[0].email!, '/vi/transactions');
+      const sellerHistory = await (await page.request.get('/api/me/transactions')).json();
+      const paid = sellerHistory.entries.find((e: any) => e.kind === 'SALE_PAID');
+      expect(BigInt(paid.amountWei) + BigInt(paid.feeWei)).toBe(parseEther('0.15'));
+      expect(sellerHistory.totals).toEqual({ incomingWei: paid.amountWei, outgoingWei: '0', escrowWei: '0' });
+      await expect(page.getByTestId('history-entry')).toHaveCount(2);
+      await page.getByRole('button', { name: 'Tiền vào', exact: true }).click();
+      await expect(page.getByRole('heading', { name: 'Nhận tiền bán hàng', exact: true })).toBeVisible();
+      await page.getByRole('button', { name: /^Menu tài khoản:/ }).click();
+      await page.getByRole('menuitemradio', { name: 'Sáng', exact: true }).click();
+      await page.keyboard.press('Escape');
+      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await page.screenshot({ path: testInfo.outputPath('seller-history.png'), fullPage: true });
+    }
     if (recording) {
       const { config } = await (await page.request.get('/api/chain')).json();
       const receipts = [];
