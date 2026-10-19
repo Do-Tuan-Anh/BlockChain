@@ -16,6 +16,8 @@ export async function apiJson(url: string, body?: unknown) {
 }
 function message(error: unknown) {
   const e = error as { code?: string | number; shortMessage?: string; message?: string };
+  if (e.message === 'CHAIN_RPC_UNAVAILABLE') return 'Mạng blockchain chưa chạy. Mở Docker Desktop rồi chạy npm run demo:up / Blockchain offline. Start Docker Desktop and run npm run demo:up.';
+  if (e.message === 'CHAIN_RESET_REDEPLOY_REQUIRED') return 'Blockchain không khớp bản triển khai đã lưu. Chạy npm run demo:up để kiểm tra; không reset dữ liệu / Blockchain deployment mismatch. Run npm run demo:up; do not reset data.';
   return e.code === 4001 || e.code === 'ACTION_REJECTED' ? 'Bạn đã từ chối yêu cầu trong ví / Request rejected in wallet.' : e.shortMessage || e.message || 'Transaction failed';
 }
 interface WalletState {
@@ -48,14 +50,34 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     return () => { active = false; };
   }, [session?.user?.id]);
   useEffect(() => {
-    const eth = injected(); if (!eth) return;
-    const reset = () => { setAddress(''); setError(''); };
-    eth.on?.('accountsChanged', reset); eth.on?.('chainChanged', reset);
-    return () => { eth.removeListener?.('accountsChanged', reset); eth.removeListener?.('chainChanged', reset); };
-  }, []);
+    const eth = injected(), c = snapshot?.config;
+    if (!eth || !linked || !session?.user?.id || !c) return;
+    let active = true, request = 0;
+    // Read existing permission only. Never request accounts, switch networks or sign automatically.
+    const restore = async () => {
+      const id = ++request; setAddress('');
+      try {
+        const accounts = await eth.request({ method: 'eth_accounts' }) as string[];
+        if (accounts[0]?.toLowerCase() !== linked.toLowerCase()) return;
+        const chainId = await eth.request({ method: 'eth_chainId' }) as string;
+        if (Number(BigInt(chainId)) !== c.chainId) return;
+        await apiJson('/api/chain/health');
+        const block = await eth.request({ method: 'eth_getBlockByNumber', params: ['0x' + c.deploymentBlock.toString(16), false] }) as { hash?: string } | null;
+        if (active && id === request && block?.hash === c.deploymentBlockHash) { setAddress(accounts[0].toLowerCase()); setError(''); }
+      } catch { /* A locked wallet or offline node stays disconnected until the user retries. */ }
+    };
+    const changed = () => { void restore(); };
+    const visible = () => { if (!document.hidden) void restore(); };
+    const disconnected = () => { request++; setAddress(''); };
+    void restore();
+    eth.on?.('accountsChanged', changed); eth.on?.('chainChanged', changed); eth.on?.('connect', changed); eth.on?.('disconnect', disconnected);
+    window.addEventListener('focus', changed); document.addEventListener('visibilitychange', visible);
+    return () => { active = false; request++; eth.removeListener?.('accountsChanged', changed); eth.removeListener?.('chainChanged', changed); eth.removeListener?.('connect', changed); eth.removeListener?.('disconnect', disconnected); window.removeEventListener('focus', changed); document.removeEventListener('visibilitychange', visible); };
+  }, [linked, session?.user?.id, snapshot?.config]);
   async function signerFor(c: ChainConfig) {
     const eth = injected();
     if (!eth) throw new Error(vi ? 'Cài MetaMask hoặc mở bằng trình duyệt ví.' : 'Install MetaMask or open in a wallet browser.');
+    await apiJson('/api/chain/health');
     const chainId = `0x${c.chainId.toString(16)}`;
     try { await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId }] }); }
     catch (error) {

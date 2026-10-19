@@ -10,7 +10,7 @@ function fixture(chainId = '0x7a69', client = 'HardhatNetwork/2.22.0', amount = 
     if (method === 'eth_chainId') return chainId;
     if (method === 'web3_clientVersion') return client;
     if (method === 'eth_getBalance') return balance;
-    if (method === 'hardhat_setBalance') { writes.push(params); balance = params[1]; return true; }
+    if (method === (/^anvil\//i.test(client) ? 'anvil_setBalance' : 'hardhat_setBalance')) { writes.push(params); balance = params[1]; return true; }
     throw new Error('Unexpected RPC');
   } };
 }
@@ -27,6 +27,12 @@ test('rejects other chains/clients before any balance mutation', async () => {
     await assert.rejects(fundLocal(address, '100000', f.request), /only allowed on local Hardhat/);
     assert.equal(f.writes.length, 0);
   }
+});
+test('supports persistent Anvil with its own funding RPC', async () => {
+  const f = fixture('0x7a69', 'anvil/v1.4.4');
+  assert.equal((await fundLocal(address, '100000', f.request)).balance, '100000.0');
+  await fundLocal(address, '100000', f.request);
+  assert.equal(f.writes.length, 1);
 });
 test('rejects invalid address and invalid amounts before RPC access', async () => {
   const noRpc = async () => assert.fail('Must not call RPC');

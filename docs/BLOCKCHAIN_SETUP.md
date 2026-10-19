@@ -4,6 +4,10 @@ Web hiện kết nối contract qua ví EIP-1193 (MetaMask), dùng ethers đã c
 
 ## 1. Khởi động local
 
+**Cách dùng cho demo hằng ngày:** mở Docker Desktop rồi bấm đúp `Start-TrustChain.cmd` hoặc chạy `npm.cmd run demo:up`. Node Anvil lưu trạng thái trong Docker volume, dùng lại contract sau restart; web/indexer được bật cùng một lệnh. Xem [hướng dẫn bật và lưu dữ liệu](DEMO_START.md).
+
+### Cách thủ công với Hardhat tạm thời (không lưu qua restart)
+
 Yêu cầu Node.js 22+, Docker Desktop, MetaMask (hoặc trình duyệt ví tương thích). Cài dependency ở root và `apps/web` nếu chưa có (`npm.cmd ci`, `npm.cmd ci --prefix apps/web`).
 
 Mở terminal tại thư mục gốc. Chạy mỗi tiến trình dài trong một terminal riêng:
@@ -96,7 +100,7 @@ Kiểm thử riêng nhánh ký quỹ/tranh chấp/hoàn tiền và phân quyền
   npm.cmd run demo:fund -- 0x90f79bf6eb2c4f870365e785982e1f101e93b906 100000
   ```
 
-  Thay địa chỉ nếu dùng ví khác. Lệnh chỉ gọi RPC `127.0.0.1:8545`, kiểm tra client Hardhat và chain ID 31337 rồi dùng `hardhat_setBalance`. Không có giao dịch chuyển tiền, không cần private key, không giảm số dư đang cao hơn mục tiêu và không chạy trên Sepolia/mainnet. Số dư này mất khi node Hardhat bị reset; chạy lại lệnh trên node đang dùng để demo.
+  Thay địa chỉ nếu dùng ví khác. Lệnh chỉ gọi RPC `127.0.0.1:8545`, kiểm tra client Hardhat/Anvil và chain ID 31337 rồi dùng `hardhat_setBalance`/`anvil_setBalance`. Không có giao dịch chuyển tiền, không cần private key, không giảm số dư đang cao hơn mục tiêu và không chạy trên Sepolia/mainnet. Anvil qua demo:up lưu số dư cùng trạng thái chain. Hardhat thủ công vẫn mất số dư khi reset; chạy lại lệnh trên node đang dùng để demo.
 - Nếu trang báo **bản đăng bán thuộc blockchain cũ**, nạp tiền không giải quyết được: người bán mở bài đó → **Tạo bản nháp trên mạng hiện tại** → **Mint NFT & đăng bán**, ký các yêu cầu MetaMask. Bản nháp sao chép thông tin/ảnh, không sao chép NFT, listing hay giao dịch cũ. Bản ghi cũ được giữ nguyên. Gửi URL bài mới cho người mua; khi indexer xác nhận listing hoạt động, nút **Mua qua Escrow** xuất hiện.
 - Không khởi động lại hoặc deploy lại blockchain chỉ để nạp ETH. Giữ node và indexer chạy trong suốt buổi demo.
 

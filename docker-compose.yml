@@ -1,4 +1,31 @@
 services:
+  chain-storage:
+    image: ghcr.io/foundry-rs/foundry:v1.4.4@sha256:9584dfbb0e2e9bda80332b66a7cebed635fc9786638871df6b7594e39e678578
+    user: '0:0'
+    entrypoint: ["sh", "-c", "chown 1000:1000 /data"]
+    network_mode: none
+    restart: 'no'
+    volumes:
+      - chain_data:/data
+  chain:
+    # Pinned Anvil release. State includes blocks, transactions and contract storage.
+    image: ghcr.io/foundry-rs/foundry:v1.4.4@sha256:9584dfbb0e2e9bda80332b66a7cebed635fc9786638871df6b7594e39e678578
+    entrypoint: ["anvil"]
+    command: ["--host", "0.0.0.0", "--chain-id", "31337", "--hardfork", "cancun", "--balance", "100000", "--state", "/data/state.json", "--state-interval", "5", "--preserve-historical-states", "--silent"]
+    restart: unless-stopped
+    depends_on:
+      chain-storage:
+        condition: service_completed_successfully
+    stop_grace_period: 30s
+    ports:
+      - '127.0.0.1:8545:8545'
+    volumes:
+      - chain_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "test -w /data && test -s /data/state.json && cast chain-id --rpc-url http://127.0.0.1:8545"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
   ipfs:
     image: ipfs/kubo:v0.32.1
     restart: unless-stopped
@@ -35,5 +62,6 @@ services:
       MP_MAX_MESSAGES: 500
 
 volumes:
+  chain_data:
   ipfs_data:
   postgres_data:

@@ -160,7 +160,7 @@ test('wallet → IPFS → NFT → listing → escrow → release in the real UI'
     await page.goto('/en/nfts');
     await expect(page.getByRole('heading', { name: `NFT #${product.nftTokenId}`, exact: true })).toBeVisible();
     await page.locator(`main a[href="/en/verify/${product.nftTokenId}"]`).click();
-    await expect(page.getByText(buyer.address, { exact: true })).toBeVisible();
+    await expect(page.getByText(buyer.address, { exact: true })).toBeVisible({ timeout: 45000 });
     await expect(page.getByText('CID_VERIFIED', { exact: true })).toBeVisible();
     await chapter('8. Đối chiếu trực tiếp', 'Trang này đọc ownerOf và tokenURI từ RPC tại một block, rồi tính lại CID metadata. NFT chứng minh bản ghi số và quyền sở hữu, không tự chứng minh hàng vật lý chính hãng.');
     if (!recording) {

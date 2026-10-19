@@ -1,5 +1,7 @@
 # Chạy chợ sản phẩm với Docker Desktop
 
+Để bật **toàn bộ demo gồm blockchain có lưu trạng thái**, dùng `Start-TrustChain.cmd` hoặc `npm.cmd run demo:up`: xem [DEMO_START.md](DEMO_START.md). Lệnh `dev:marketplace` bên dưới chỉ bật web và các dịch vụ dữ liệu.
+
 Docker chạy PostgreSQL, hộp thư thử nghiệm Mailpit và IPFS; Next.js chạy trên máy tại http://localhost:3000. Luồng ví/NFT/Escrow cần thêm Hardhat node, deploy và indexer: xem [BLOCKCHAIN_SETUP.md](BLOCKCHAIN_SETUP.md).
 
 1. Mở Docker Desktop và chờ engine hoạt động.

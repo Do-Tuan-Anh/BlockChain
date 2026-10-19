@@ -1,5 +1,7 @@
 # TrustChain — NFT Marketplace với Smart-Contract Escrow
 
+**Bật demo một lần bấm:** mở Docker Desktop rồi bấm đúp [`Start-TrustChain.cmd`](Start-TrustChain.cmd), hoặc chạy `npm.cmd run demo:up`. Blockchain Anvil lưu dữ liệu trong Docker volume và dùng lại khi khởi động. [Cách sử dụng, lưu dữ liệu và xử lý MetaMask](docs/DEMO_START.md).
+
 TrustChain là đồ án blockchain mô phỏng một chợ mua bán sản phẩm vật lý. Smart contract quản lý chứng nhận ERC-721, listing, thanh toán ký quỹ, tranh chấp và uy tín; ứng dụng web quản lý tài khoản, hồ sơ và dữ liệu sản phẩm ngoài chuỗi.
 
 > **Trạng thái hiện tại:** web đã kết nối ví và gọi smart contract cho luồng IPFS → mint NFT → đăng bán → mua qua Escrow → giải ngân/hoàn tiền/phân xử. Indexer đồng bộ sự kiện thật vào PostgreSQL. Đã cấu hình pipeline local và Sepolia; deployment công khai cần RPC, ví và ETH testnet của nhóm. Xem [hướng dẫn blockchain](docs/BLOCKCHAIN_SETUP.md).
@@ -141,7 +143,7 @@ Hướng dẫn chi tiết:
 
 - Chưa triển khai Sepolia bằng ví của nhóm; cần điền cấu hình theo hướng dẫn.
 - Chưa kiểm chứng extension MetaMask thật; UI test sử dụng adapter EIP-1193 ký giao dịch thật trên Hardhat.
-- Hardhat local mất trạng thái khi tắt node. Mỗi lần khởi động chain mới cần deploy lại.
+- `demo:up` dùng Anvil lưu trạng thái mỗi 5 giây và khi shutdown bình thường; mất điện đột ngột có thể mất thay đổi gần nhất. Hardhat thủ công (`npm run node`) vẫn mất trạng thái khi tắt.
 - IPFS local cần node/pin còn hoạt động; chưa có dịch vụ pin ảnh và metadata công khai lâu dài.
 - Dữ liệu nhạy cảm nằm ngoài chuỗi nhưng chưa có lớp mã hóa ứng dụng riêng cho địa chỉ giao hàng.
 - Phân xử vẫn có quyền owner/arbitrator tập trung theo contract hiện có. Chưa thực hiện audit bảo mật độc lập.
