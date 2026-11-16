@@ -8,6 +8,7 @@ import { Product } from "@/lib/products";
 import { ArrowLeft, Layers3, Package, UserRound } from 'lucide-react';
 import { ProductBlockchain } from '@/components/ChainControls';
 import { mediaUrl } from '@/lib/media';
+import { productCategoryLabel } from '@/lib/product-category';
 
 export default function ProductDetailPage() {
   const params = useParams<{ id: string; locale: string }>();
@@ -44,7 +45,7 @@ export default function ProductDetailPage() {
         </div>
         <div className="space-y-6">
           <div>
-            <p className="inline-flex flex-wrap gap-2 rounded-lg border border-accent/20 bg-accent/10 px-3 py-1.5 text-xs text-accent-soft">{t(`categories.${product.category}`)} / {t(`conditions.${product.condition}`)}</p>
+            <p className="inline-flex max-w-full flex-wrap gap-2 rounded-lg border border-accent/20 bg-accent/10 px-3 py-1.5 text-xs text-accent-soft"><span className="min-w-0 [overflow-wrap:anywhere]">{productCategoryLabel(product.category, t)}</span><span aria-hidden="true">/</span><span>{t(`conditions.${product.condition}`)}</span></p>
             <h1 className="text-3xl sm:text-4xl font-bold text-ink mt-5 break-words">{product.title}</h1>
             <p className="text-sm leading-7 text-secondary mt-5 whitespace-pre-wrap">{product.description}</p>
           </div>

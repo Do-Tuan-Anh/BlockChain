@@ -1,3 +1,2 @@
-import { NextRequest } from 'next/server';
-import { authAction } from '@/lib/auth-actions';
-export const POST = (req: NextRequest) => authAction(req, 'reset-password');
+import { NextResponse } from 'next/server';
+export function POST() { return NextResponse.json({ error: 'WALLET_LOGIN_REQUIRED' }, { status: 410 }); }

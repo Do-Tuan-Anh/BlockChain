@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, ChevronLeft, ChevronRight, Package, Pause, Play } from 'lucide-react';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { mediaUrl } from '@/lib/media';
+import { productCategoryLabel } from '@/lib/product-category';
 
 interface FeaturedProduct {
   id: string; title: string; description: string; price: string; currency: string; imageUrl: string | null;
@@ -75,7 +76,7 @@ export function HomeHero({ children }: { children: React.ReactNode }) {
         <article className="hero featured-hero">
           <div className="relative z-10 min-w-0">
             <p className="eyebrow"><span className="h-1.5 w-1.5 rounded-full bg-positive" />{vi ? 'KHÁM PHÁ / ĐANG BÁN' : 'DISCOVER / FOR SALE'}</p>
-            <p className="mb-4 text-sm text-accent-soft">{t(`categories.${product.category}`) === `categories.${product.category}` ? product.category : t(`categories.${product.category}`)}</p>
+            <p className="mb-4 text-sm text-accent-soft [overflow-wrap:anywhere]">{productCategoryLabel(product.category, t)}</p>
             <h2 className="hero-title line-clamp-3 break-words">{product.title}</h2>
             <p className="mt-5 line-clamp-3 max-w-lg text-base leading-7 text-secondary">{product.description}</p>
             <p className="mt-5 text-2xl font-bold break-words">{product.price} <span className="text-base text-accent-soft">{product.currency}</span></p>

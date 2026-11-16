@@ -114,8 +114,9 @@ Các địa chỉ local:
 
 Hướng dẫn chi tiết:
 
+- [Đặc tả và thứ tự các tính năng tiếp theo](docs/FEATURE_ROADMAP.md) — phạm vi, quyền truy cập, dữ liệu, checklist nghiệm thu và ghi chú bàn giao.
 - [Chạy marketplace local](docs/MARKETPLACE_LOCAL.md)
-- [Đăng ký, xác thực email và OAuth](docs/AUTH_SETUP.md)
+- [Đăng nhập bằng MetaMask và quản lý hồ sơ](docs/AUTH_SETUP.md)
 - [Kết nối ví, deploy contract, IPFS, Escrow và indexer](docs/BLOCKCHAIN_SETUP.md)
 - [Ảnh IPFS, kiểm tra CID, sao lưu và khôi phục CAR](docs/IPFS_STORAGE.md)
 - [Kiến trúc thực thi và sơ đồ](docs/ARCHITECTURE.md)
@@ -124,9 +125,10 @@ Hướng dẫn chi tiết:
 
 ## Những gì web đã làm được
 
-- Đăng ký và đăng nhập bằng email hoặc số điện thoại.
-- Xác thực email và đặt lại mật khẩu qua Mailpit.
-- Cấu hình tùy chọn cho Google và Facebook OAuth.
+- Đăng nhập bằng chữ ký MetaMask; mỗi địa chỉ ví là một tài khoản, ví mới tự tạo hồ sơ.
+- Đổi account MetaMask kết thúc phiên cũ và yêu cầu ký đăng nhập lại; sửa tên/avatar/ảnh bìa trong hồ sơ.
+- Ví mới có bước [thiết lập hồ sơ lần đầu](docs/PROFILE_ONBOARDING.md), có thể lưu tên/avatar/giới thiệu hoặc chọn Để sau; lựa chọn được lưu theo tài khoản.
+- Email/mật khẩu và Google/Facebook đã ngừng dùng từ 15/11/2026; xem [đăng nhập ví](docs/AUTH_SETUP.md).
 - Hồ sơ/shop công khai, avatar và chỉnh sửa hồ sơ.
 - Tạo, xem và lọc mặt hàng lưu trong PostgreSQL.
 - Giao diện tiếng Việt/tiếng Anh và responsive.

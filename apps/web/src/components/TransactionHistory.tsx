@@ -4,7 +4,8 @@ import { ArrowDownLeft, ArrowUpRight, Clock3, History, RefreshCw } from 'lucide-
 import { formatEther } from 'ethers';
 import { apiJson, useWallet } from '@/contexts/WalletContext';
 import { useTranslation } from '@/contexts/LanguageContext';
-import { WalletPanel } from './ChainControls';
+import { WalletPanel, TxLink } from './ChainControls';
+import { WalletBalance } from './WalletBalance';
 import type { HistoryKind, TransactionHistoryData } from '@/lib/chain/history-types';
 
 const labels: Record<HistoryKind, [string, string]> = {
@@ -56,6 +57,7 @@ export function TransactionHistory() {
     </header>
     {error && <p role="alert" className="rounded-xl border border-danger/30 bg-danger/10 p-4 text-danger">{vi ? 'Chưa tải được lịch sử. Kiểm tra dịch vụ blockchain rồi bấm Đồng bộ lịch sử để thử lại.' : 'History could not be loaded. Check the blockchain services and try Sync history again.'}</p>}
     {busy && !data && <p role="status" className="text-muted">{vi ? 'Đang đọc lịch sử giao dịch…' : 'Loading transaction history…'}</p>}
+    <WalletBalance />
     {data && <>
       <section className="glass-panel p-5 space-y-2 text-sm" aria-label={vi ? 'Phạm vi lịch sử' : 'History scope'}>
         <p className="font-semibold">{data.chain.chainName} · Chain ID {data.chain.chainId}{data.chain.chainId === 31337 && (vi ? ' · ETH thử nghiệm' : ' · test ETH')}</p>
@@ -81,9 +83,10 @@ export function TransactionHistory() {
             <div className="mt-4 space-y-2 border-t border-line pt-4 text-xs text-muted">
               <p>{vi ? 'Giá trị đơn: ' : 'Order value: '}{eth(entry.orderValueWei)} ETH{entry.feeWei !== null && <> · {vi ? 'Phí nền tảng: ' : 'Protocol fee: '}{eth(entry.feeWei)} ETH</>}</p>
               {entry.kind === 'SALE_PAID' && <p>{vi ? 'Khoản cộng là tiền thực nhận sau phí nền tảng.' : 'The credit is the net amount received after the protocol fee.'}</p>}
+              {entry.kind === 'PURCHASE_COMPLETED' && <p>{vi ? 'Bạn đã trả tiền ở bước ký quỹ. Bước này chuyển tiền từ Escrow cho người bán và chuyển NFT cho bạn, không trừ lại giá sản phẩm. Ví vẫn trả phí gas cho giao dịch xác nhận.' : 'You paid at the deposit step. This step transfers Escrow funds to the seller and the NFT to you without charging the item price again. The confirmation transaction still costs gas.'}</p>}
               <p className="break-all">{vi ? 'Ví đối tác: ' : 'Counterparty: '}<code>{entry.counterparty}</code></p>
-              <p className="break-all">Tx: {data.chain.explorer ? <a className="text-accent-soft underline" href={`${data.chain.explorer}/tx/${entry.transactionHash}`} target="_blank" rel="noreferrer">{entry.transactionHash}</a> : <code>{entry.transactionHash}</code>}</p>
-              <p>Block {entry.blockNumber}</p>
+              <p className="break-all">Tx: <TxLink hash={entry.transactionHash} scope={data.chain.scope} /></p>
+              <p className="text-positive">{vi ? 'Đã ghi nhận trên blockchain' : 'Recorded on blockchain'} · Block {entry.blockNumber}</p>
               <div className="flex flex-wrap gap-4 pt-1"><a className="inline-flex min-h-11 items-center text-sm text-accent-soft" href={`/${locale}/orders/${entry.orderId}`}>{vi ? 'Xem đơn hàng →' : 'View order →'}</a>{entry.product && <a className="inline-flex min-h-11 items-center text-sm text-accent-soft" href={`/${locale}/product/${entry.product.id}`}>{vi ? 'Xem sản phẩm →' : 'View product →'}</a>}</div>
             </div>
           </article>;

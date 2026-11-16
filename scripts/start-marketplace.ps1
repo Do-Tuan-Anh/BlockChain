@@ -24,6 +24,8 @@ if (!(Test-Path 'apps/web/node_modules')) {
 }
 npm.cmd run db:generate --prefix apps/web
 if ($LASTEXITCODE -ne 0) { throw 'Prisma generation failed. Stop the running web server and try again.' }
+node scripts/upgrade-profile-onboarding.cjs
+if ($LASTEXITCODE -ne 0) { throw 'Profile onboarding upgrade failed; existing data was not reset.' }
 npm.cmd run db:push --prefix apps/web -- --skip-generate
 if ($LASTEXITCODE -ne 0) { throw 'Database setup failed. Check apps/web/.env.' }
 npm.cmd run dev --prefix apps/web

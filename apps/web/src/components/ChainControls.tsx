@@ -2,19 +2,22 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Interface, parseEther, formatEther } from 'ethers';
-import { Wallet, RefreshCw, ExternalLink } from 'lucide-react';
-import { apiJson, useWallet } from '@/contexts/WalletContext';
+import { Wallet, RefreshCw } from 'lucide-react';
+import { apiJson, useWallet, transactionErrorMessage } from '@/contexts/WalletContext';
 import { useTranslation } from '@/contexts/LanguageContext';
 import type { Product } from '@/lib/products';
 import abis from '@/lib/chain/abis.json';
 import { uploadProductImage } from '@/lib/upload-image';
 import { mediaUrl } from '@/lib/media';
 import { WalletLinkStatus } from './WalletLinkStatus';
+import { WalletBalance } from './WalletBalance';
 
-export function TxLink({ hash }: { hash?: string | null }) {
+export function TxLink({ hash, scope }: { hash?: string | null; scope?: string | null }) {
   const { config } = useWallet();
+  const { locale } = useTranslation();
   if (!hash) return null;
-  return config?.explorer ? <a className="text-accent-soft break-all inline-flex gap-2 items-center" href={`${config.explorer}/tx/${hash}`} target="_blank" rel="noreferrer">{hash}<ExternalLink size={14} /></a> : <code className="break-all text-xs">{hash}</code>;
+  const deployment = scope || config?.scope;
+  return <a className="text-accent-soft break-all text-xs underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-accent" href={`/${locale}/transactions/${encodeURIComponent(hash)}${deployment ? `?scope=${encodeURIComponent(deployment)}` : ''}`}>{hash}</a>;
 }
 export function PrivateDrafts() {
   const { data: session } = useSession(), { locale } = useTranslation();
@@ -30,28 +33,13 @@ export function PrivateDrafts() {
 export function WalletPanel() {
   const w = useWallet(), { locale } = useTranslation(), vi = locale === 'vi';
   const [refreshing, setRefreshing] = useState(false), [error, setError] = useState('');
-  const [balance, setBalance] = useState<{ address: string; scope: string; balanceEth: string } | null>(null);
-  const [balanceError, setBalanceError] = useState(false);
-  useEffect(() => {
-    let active = true;
-    setBalance(null); setBalanceError(false);
-    if (w.linked && w.config) apiJson('/api/chain/balance').then(data => {
-      if (active) setBalance(data);
-    }).catch(() => { if (active) setBalanceError(true); });
-    return () => { active = false; };
-  }, [w.linked, w.snapshot]);
-  const currentBalance = balance?.address.toLowerCase() === w.linked.toLowerCase() && balance?.scope === w.config?.scope ? balance : null;
   return <section className="glass-panel p-5 space-y-3" aria-label={vi ? 'Ví blockchain' : 'Blockchain wallet'}>
     <div className="flex flex-wrap items-center gap-3 justify-between">
       <div className="min-w-0 space-y-2"><p className="font-semibold flex gap-2 items-center"><Wallet size={18} />{w.config?.chainName || (vi ? 'Blockchain chưa sẵn sàng' : 'Blockchain not configured')}</p><WalletLinkStatus />{w.linked && <p className="text-xs text-muted break-all">{w.linked}</p>}</div>
       <div className="flex flex-wrap gap-2"><button type="button" className="btn-primary" disabled={w.busy} onClick={() => w.connect().catch(() => {})}>{w.address ? (vi ? 'Kết nối lại ví' : 'Reconnect wallet') : (vi ? 'Kết nối ví' : 'Connect wallet')}</button>
       <button type="button" className="btn-secondary" disabled={w.busy || refreshing} onClick={async () => { setRefreshing(true); setError(''); try { await w.refresh(true); } catch (e) { setError((e as Error).message); } finally { setRefreshing(false); } }}><RefreshCw size={15} />{vi ? 'Đồng bộ' : 'Sync'}</button></div>
     </div>
-    {w.linked && <div className="rounded-xl border border-line bg-inset p-3 space-y-1">
-      <p className="text-xs text-muted">{vi ? 'Số dư ví đã liên kết' : 'Linked wallet balance'}</p>
-      <p className="font-semibold break-words" data-testid="wallet-balance">{currentBalance ? `${Number(currentBalance.balanceEth).toLocaleString(vi ? 'vi-VN' : 'en-US', { maximumFractionDigits: 6 })} ${w.config?.chainId === 31337 ? (vi ? 'ETH thử nghiệm' : 'test ETH') : 'ETH'}` : balanceError ? (vi ? 'Chưa đọc được số dư · hãy thử Đồng bộ' : 'Balance unavailable · try Sync') : (vi ? 'Đang đọc số dư…' : 'Loading balance…')}</p>
-      {w.config?.chainId === 31337 && <p className="text-xs text-muted">{vi ? 'Tiền demo trên mạng local, không có giá trị tiền thật. Khi mua cần đủ giá sản phẩm và phí gas.' : 'Local demo funds have no monetary value. Purchases need the item price plus gas.'}</p>}
-    </div>}
+    {w.linked && <WalletBalance />}
     {w.config && <p className="text-xs text-muted">Chain ID {w.config.chainId} · {vi ? 'Block đã đồng bộ' : 'Indexed block'}: {w.snapshot?.checkpoint?.blockNumber ?? '—'} · {w.config.confirmations} {vi ? 'block chờ an toàn' : 'confirmation blocks'}</p>}
     {w.status && <p role="status" className="text-sm text-positive">{w.status}</p>}
     {w.hash && <TxLink hash={w.hash} />}
@@ -116,7 +104,8 @@ export function ProductBlockchain({ product, onUpdated }: { product: Product; on
     } catch (e) {
       const failed = e as { message: string; code?: string; cancelled?: boolean; receipt?: { status: number } };
       if (failed.message === 'TRANSACTION_REVERTED' || failed.receipt?.status === 0 || (failed.code === 'TRANSACTION_REPLACED' && failed.cancelled)) localStorage.removeItem(storageKey);
-      setError(failed.message);
+      setStage('');
+      setError(transactionErrorMessage(e, vi));
     }
     finally { setWorking(false); }
   }
@@ -128,7 +117,7 @@ export function ProductBlockchain({ product, onUpdated }: { product: Product; on
       const event = receipt.logs.filter(log => log.address.toLowerCase() === w.config?.contracts.Marketplace.toLowerCase()).map(log => { try { return iface.parseLog(log); } catch { return null; } }).find(log => log?.name === 'ItemPurchased');
       if (event) window.location.assign(`/${locale}/orders/${event.args.orderId}`);
       else await updated();
-    } catch (e) { setError((e as Error).message); } finally { setWorking(false); }
+    } catch (e) { setError(transactionErrorMessage(e, vi)); } finally { setWorking(false); }
   }
   return <div className="space-y-4">
     <WalletPanel />
@@ -149,7 +138,7 @@ export function ProductBlockchain({ product, onUpdated }: { product: Product; on
       {!w.config && <p className="text-warning text-sm">{vi ? 'Chưa có thông tin blockchain. Bấm Đồng bộ để thử lại và xem lỗi kết nối.' : 'Blockchain information unavailable. Try Sync to retry and check connection errors.'}</p>}
       <p className="text-sm">{product.nftTokenId ? `NFT #${product.nftTokenId} · ${product.status}` : (vi ? 'Chưa mint NFT' : 'NFT not minted')}</p>
       {product.metadataUri && <p className="text-xs break-all text-muted">{product.metadataUri}</p>}
-      {product.mintTxHash && <TxLink hash={product.mintTxHash} />}
+      {product.mintTxHash && <TxLink hash={product.mintTxHash} scope={product.chainScope} />}
       {product.nftTokenId && scopeMatches && <a className="block text-accent-soft" href={`/${locale}/verify/${product.nftTokenId}`}>{vi ? 'Xác minh chứng nhận' : 'Verify certificate'} →</a>}
       {owner && !['SOLD', 'ARCHIVED'].includes(product.status || '') && (!product.nftTokenId || product.status !== 'LISTED') && <button type="button" disabled={disabled} onClick={publish} className="btn-primary">{product.nftTokenId ? (vi ? 'Tiếp tục đăng bán' : 'Resume listing') : (vi ? 'Mint NFT & đăng bán' : 'Mint NFT & list')}</button>}
       {!owner && scopeMatches && !activeListing && <p role="status" className="rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm text-warning">{product.status === 'SOLD' ? (vi ? 'Sản phẩm đã được mua.' : 'This item has already been purchased.') : !product.nftTokenId || !product.listingId ? (vi ? 'Chưa thể mua: người bán chưa hoàn tất mint NFT và đăng bán trên blockchain.' : 'Purchase unavailable: the seller has not completed minting and listing on blockchain.') : listing ? (vi ? 'Lệnh đăng bán không còn hoạt động.' : 'This listing is no longer active.') : (vi ? 'Chưa tìm thấy lệnh đăng bán trên mạng hiện tại. Bấm Đồng bộ để cập nhật; nếu vẫn không thấy, người bán cần kiểm tra lại.' : 'Listing not found on the current network. Try Sync; if it remains unavailable, ask the seller to check the listing.')}</p>}

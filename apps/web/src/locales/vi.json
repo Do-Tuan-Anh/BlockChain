@@ -41,7 +41,8 @@
     "Watches": "Đồng hồ",
     "Gaming": "Trò chơi",
     "Collectibles": "Sưu tầm",
-    "Fashion": "Thời trang"
+    "Fashion": "Thời trang",
+    "Other": "Khác"
   },
   "conditions": {
     "All": "Tất cả",
@@ -90,6 +91,10 @@
     "productTitle": "Tên sản phẩm *",
     "productTitlePlaceholder": "VD: Nike Air Max 1 '86 OG Big Bubble",
     "category": "Danh mục *",
+    "customCategory": "Nhập danh mục của bạn *",
+    "customCategoryPlaceholder": "VD: Đồ gia dụng, Sách, Nhạc cụ…",
+    "customCategoryHelp": "Tối đa 80 ký tự. Tên này sẽ hiển thị trên sản phẩm và metadata NFT.",
+    "invalidCategory": "Vui lòng nhập danh mục hợp lệ từ 1–80 ký tự, không chỉ gồm khoảng trắng.",
     "conditionLabel": "Tình trạng *",
     "brand": "Thương hiệu",
     "brandPlaceholder": "VD: Nike, Apple, Sony",

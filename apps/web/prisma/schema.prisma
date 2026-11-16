@@ -32,6 +32,7 @@ model User {
   emailVerified DateTime?
   passwordHash  String?
   sessionVersion Int      @default(0)
+  profileSetupAt DateTime?
   avatarUrl     String?
   coverUrl      String?
   bio           String?

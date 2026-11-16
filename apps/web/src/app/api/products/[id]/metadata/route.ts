@@ -5,20 +5,27 @@ import { authError, validOrigin, rateLimit } from '@/lib/auth-security';
 import { config, providerFor, validateChain } from '@/lib/chain/runtime.cjs';
 import { pinBytes, readVerified } from '@/lib/ipfs.cjs';
 import sharp from 'sharp';
+import { withDeadline } from '@/lib/chain/transaction-details.cjs';
 export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!validOrigin(req)) return authError('INVALID_ORIGIN', 403);
   const user = await currentUser();
   if (!user) return authError('UNAUTHORIZED', 401);
   if (!await rateLimit('metadata', user.id, 30)) return authError('RATE_LIMITED', 429);
+  let preparingStorage = false;
   try {
-    const c = config(), provider = providerFor(c);
-    try { await validateChain(provider, c); } finally { provider.destroy(); }
     const product = await prisma.product.findUnique({ where: { id: (await params).id }, include: { seller: true } });
     if (!product || product.sellerId !== user.id) return authError('NOT_FOUND', 404);
+    const c = config(), provider = providerFor(c, 5000);
+    try { await withDeadline(() => validateChain(provider, c), 6000); }
+    catch (error) {
+      const code = (error as Error).message;
+      return authError(['CHAIN_RESET_REDEPLOY_REQUIRED', 'WRONG_RPC_CHAIN'].includes(code) ? code : 'CHAIN_RPC_UNAVAILABLE', 503);
+    } finally { provider.destroy(); }
     if (!product.seller.walletAddress) return authError('LINK_WALLET_FIRST');
     if (product.chainScope && product.chainScope !== c.scope) return authError('PRODUCT_BELONGS_TO_ANOTHER_DEPLOYMENT', 409);
     if (product.metadataUri) { const { seller, ...publicProduct } = product; return NextResponse.json({ product: publicProduct }); }
+    preparingStorage = true;
     if (product.imageUrl) {
       if (!product.imageUrl.startsWith('ipfs://')) return authError('UPLOAD_IMAGE_TO_IPFS_FIRST', 409);
       const image = await readVerified(product.imageUrl, 5 * 1024 * 1024);
@@ -32,9 +39,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       { trait_type: 'Brand', value: product.brand || '' }, { trait_type: 'Model', value: product.model || '' },
     ] };
     const metadataUri = await pinBytes(Buffer.from(JSON.stringify(metadata)));
+    preparingStorage = false;
     await prisma.product.updateMany({ where: { id: product.id, metadataUri: null, updatedAt: product.updatedAt }, data: { metadataUri, metadataJson: metadata, chainScope: c.scope, mintWallet: product.seller.walletAddress.toLowerCase(), status: 'DRAFT' } });
     const saved = await prisma.product.findUniqueOrThrow({ where: { id: product.id } });
     if (!saved.metadataUri) return authError('PRODUCT_CHANGED_RETRY', 409);
     return NextResponse.json({ product: saved });
-  } catch (error) { console.error('Metadata pin:', error); return authError('METADATA_PREPARATION_FAILED', 503); }
+  } catch (error) {
+    const code = (error as Error).message;
+    const storage = preparingStorage || /^(IPFS_|INVALID_IPFS_URI)/.test(code);
+    console.error('Metadata preparation failed:', storage ? 'PRODUCT_STORAGE_UNAVAILABLE' : 'METADATA_PREPARATION_FAILED');
+    return authError(storage ? 'PRODUCT_STORAGE_UNAVAILABLE' : 'METADATA_PREPARATION_FAILED', 503);
+  }
 }

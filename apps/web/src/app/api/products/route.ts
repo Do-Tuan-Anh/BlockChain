@@ -4,6 +4,7 @@ import { Prisma, ProductStatus } from '@prisma/client';
 import { currentUser } from '@/lib/auth';
 import { authError, validOrigin } from '@/lib/auth-security';
 import { parseEther } from 'ethers';
+import { normalizeProductCategory } from '@/lib/product-category';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,6 +67,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid product data' }, { status: 400 });
     }
     const { title, description, category, condition, brand, model, price, currency, imageUrl } = body;
+    const productCategory = normalizeProductCategory(category);
+    if (!productCategory) return authError('INVALID_CATEGORY');
     if (body.onchain === true) {
       try { if (parseEther(String(price)) <= BigInt(0) || (currency && currency !== 'ETH')) throw new Error(); }
       catch { return authError('INVALID_ETH_PRICE'); }
@@ -87,7 +90,7 @@ export async function POST(req: NextRequest) {
       data: {
         title: title.trim(),
         description: description.trim(),
-        category,
+        category: productCategory,
         condition,
         brand: brand || null,
         model: model || null,

@@ -10,6 +10,7 @@ import { LanguageSwitcher } from './LanguageSwitcher';
 import { useTheme } from '../contexts/ThemeContext';
 import { useWallet } from '../contexts/WalletContext';
 import { WalletLinkStatus } from './WalletLinkStatus';
+import { WalletBalance } from './WalletBalance';
 
 export function AccountMenu({ name, image }: { name: string; image?: string | null }) {
   const { locale } = useTranslation();
@@ -80,6 +81,7 @@ export function AccountMenu({ name, image }: { name: string; image?: string | nu
         <p className="flex items-center gap-2 text-xs font-semibold text-muted"><WalletCards size={14} aria-hidden="true" />{vi ? 'Ví blockchain' : 'Blockchain wallet'}</p>
         <div className="mt-2"><WalletLinkStatus /></div>
         {wallet.linked && <p className="mt-2 break-all font-mono text-[11px] text-secondary">{wallet.linked}</p>}
+        {wallet.linked && <WalletBalance compact />}
         <p className="mt-1 text-[11px] text-muted">{wallet.address ? (vi ? 'Đang kết nối với website' : 'Connected to this website') : wallet.linked ? (vi ? 'Đã lưu với tài khoản · hiện chưa kết nối' : 'Saved to account · currently disconnected') : (vi ? 'Mỗi tài khoản sử dụng một địa chỉ ví' : 'Each account uses one wallet address')}</p>
         <button type="button" role="menuitem" tabIndex={-1} disabled={wallet.busy} onClick={() => {
           const action = wallet.address ? wallet.disconnect() : wallet.connect();
@@ -106,7 +108,9 @@ export function AccountMenu({ name, image }: { name: string; image?: string | nu
       <button role="menuitem" tabIndex={-1} type="button" disabled={leaving} onClick={async () => {
         setLeaving(true); setError(false);
         try {
-          await wallet.disconnect().catch(() => {});
+          const response = await fetch('/api/auth/wallet-logout', { method: 'POST' });
+          if (!response.ok) throw new Error('LOGOUT_FAILED');
+          void wallet.disconnect().catch(() => {});
           await signOut({ callbackUrl: `/${locale}` });
         }
         catch { setLeaving(false); setError(true); }

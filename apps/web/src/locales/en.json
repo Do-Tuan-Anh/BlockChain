@@ -41,7 +41,8 @@
     "Watches": "Watches",
     "Gaming": "Gaming",
     "Collectibles": "Collectibles",
-    "Fashion": "Fashion"
+    "Fashion": "Fashion",
+    "Other": "Other"
   },
   "conditions": {
     "All": "All",
@@ -90,6 +91,10 @@
     "productTitle": "Product Title *",
     "productTitlePlaceholder": "e.g. Nike Air Max 1 '86 OG Big Bubble",
     "category": "Category *",
+    "customCategory": "Enter your category *",
+    "customCategoryPlaceholder": "e.g. Homeware, Books, Musical instruments…",
+    "customCategoryHelp": "Up to 80 characters. This name appears on the product and in NFT metadata.",
+    "invalidCategory": "Enter a valid category of 1–80 characters; spaces alone are not allowed.",
     "conditionLabel": "Condition *",
     "brand": "Brand",
     "brandPlaceholder": "e.g. Nike, Apple, Sony",

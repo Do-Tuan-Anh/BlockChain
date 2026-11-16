@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useTranslation } from "../../../contexts/LanguageContext";
 import { Product } from "@/lib/products";
 import { ImagePlus, Package, Plus } from 'lucide-react';
 import { useClientReady } from '@/components/useClientReady';
 import { ProductBlockchain } from '@/components/ChainControls';
 import { uploadProductImage } from '@/lib/upload-image';
+import { MAX_CATEGORY_LENGTH, PRODUCT_CATEGORIES, normalizeProductCategory } from '@/lib/product-category';
 
 export default function CreateListingPage() {
   const clientReady = useClientReady();
@@ -14,6 +15,8 @@ export default function CreateListingPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("Sneakers");
+  const [customCategory, setCustomCategory] = useState('');
+  const customCategoryInput = useRef<HTMLInputElement>(null);
   const [condition, setCondition] = useState("New in Box");
   const [brand, setBrand] = useState("");
   const [model, setModel] = useState("");
@@ -25,12 +28,18 @@ export default function CreateListingPage() {
   const [onchain, setOnchain] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
-  const categoryKeys = ["Sneakers", "Electronics", "Watches", "Gaming", "Collectibles", "Fashion"];
+  const categoryKeys = [...PRODUCT_CATEGORIES, 'Other'];
   const conditionKeys = ["New in Box", "Like New", "Good", "Fair", "Pristine"];
 
   const handleCreateListing = async (e: React.FormEvent) => {
     e.preventDefault();
     if (step !== "form") return;
+    const productCategory = normalizeProductCategory(category === 'Other' ? customCategory : category);
+    if (!productCategory) {
+      setError(t('createListing.invalidCategory'));
+      customCategoryInput.current?.focus();
+      return;
+    }
     setStep("saving");
     setError(null);
     try {
@@ -40,7 +49,7 @@ export default function CreateListingPage() {
         body: JSON.stringify({
           title,
           description,
-          category,
+          category: productCategory,
           condition,
           brand,
           model,
@@ -51,7 +60,7 @@ export default function CreateListingPage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok || !data.product?.id) throw new Error(data.error || t("common.error"));
+      if (!res.ok || !data.product?.id) throw new Error(data.error === 'INVALID_CATEGORY' ? t('createListing.invalidCategory') : data.error || t("common.error"));
       setSavedProduct(data.product);
       if (imageFile) {
         try { setSavedProduct(await uploadProductImage(data.product.id, imageFile)); }
@@ -104,6 +113,8 @@ export default function CreateListingPage() {
                 setImageUrl("");
                 setImageFile(null);
                 setSavedProduct(null);
+                setCustomCategory('');
+                setError(null);
               }}
               className="bg-elevated hover:bg-line text-secondary font-semibold text-sm px-6 py-2.5 rounded-xl transition"
             >
@@ -140,13 +151,21 @@ export default function CreateListingPage() {
                   <select
                     id="listing-category"
                     value={category}
-                    onChange={(e) => setCategory(e.target.value)}
+                    onChange={(e) => { setCategory(e.target.value); setError(null); }}
                     className="w-full bg-inset border border-line rounded-lg p-2.5 text-sm focus:outline-none focus:border-accent/30"
                   >
                     {categoryKeys.map((c) => (
                       <option key={c} value={c}>{t(`categories.${c}`)}</option>
                     ))}
                   </select>
+                  {category === 'Other' && <div className="mt-3">
+                    <label htmlFor="listing-custom-category" className="mb-1 block text-xs font-semibold text-secondary">{t('createListing.customCategory')}</label>
+                    <input ref={customCategoryInput} id="listing-custom-category" type="text" required maxLength={MAX_CATEGORY_LENGTH}
+                      value={customCategory} onChange={event => { setCustomCategory(event.target.value); setError(null); }}
+                      placeholder={t('createListing.customCategoryPlaceholder')} aria-describedby="listing-custom-category-help"
+                      className="w-full rounded-lg border border-line bg-inset p-2.5 text-sm focus:outline-none focus:border-accent/30 focus-visible:ring-2 focus-visible:ring-accent/30" />
+                    <p id="listing-custom-category-help" className="mt-1.5 text-xs text-muted">{t('createListing.customCategoryHelp')}</p>
+                  </div>}
                 </div>
 
                 <div>
@@ -233,7 +252,7 @@ export default function CreateListingPage() {
           <div className="glass-panel overflow-hidden p-5">
             <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold"><ImagePlus size={17} className="text-accent-soft" />{locale === 'vi' ? 'Xem trước sản phẩm' : 'Listing preview'}</h2>
             <div className="aspect-square overflow-hidden rounded-xl border border-line bg-inset">{imageUrl ? <img key={imageUrl} src={imageUrl} alt={title || t('createListing.productTitle')} className="h-full w-full object-cover" onError={event => { event.currentTarget.style.visibility = 'hidden'; }} /> : <div className="product-placeholder"><Package size={50} strokeWidth={1} /></div>}</div>
-            <p className="mt-4 text-xs text-accent-soft">{t(`categories.${category}`)} · {t(`conditions.${condition}`)}</p>
+            <p className="mt-4 text-xs text-accent-soft [overflow-wrap:anywhere]">{category === 'Other' ? customCategory.trim() || t('categories.Other') : t(`categories.${category}`)} · {t(`conditions.${condition}`)}</p>
             <p className="mt-2 break-words text-lg font-semibold">{title || t('createListing.productTitle')}</p>
             <p className="mt-3 break-all text-2xl font-bold">{price || '—'} <span className="text-sm font-normal text-muted">ETH</span></p>
             <p className="mt-4 border-t border-line pt-4 text-xs leading-5 text-muted">{locale === 'vi' ? 'Bản xem trước từ thông tin bạn đang nhập. Sản phẩm chỉ được đăng sau khi lưu thành công.' : 'A preview of your current details. Your product is published only after saving successfully.'}</p>

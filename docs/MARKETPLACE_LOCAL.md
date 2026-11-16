@@ -30,6 +30,8 @@ npm.cmd run dev --prefix apps/web
 ## Thêm và xem mặt hàng
 
 - Mở `/create-listing`, nhập tên, mô tả, danh mục, tình trạng, giá dương; chọn ảnh JPG/PNG/WebP để upload lên IPFS. Tin thông thường vẫn có thể dùng URL ảnh.
+- Với danh mục ngoài danh sách, chọn **Khác / Other** rồi nhập tên vào ô hiện bên dưới (bắt buộc, tối đa 80 ký tự). Không nhận tên chỉ có khoảng trắng hoặc ký tự điều khiển; khoảng trắng đầu/cuối được bỏ khi lưu. Chuyển sang danh mục có sẵn sẽ ẩn ô và dùng danh mục đang chọn.
+- Tên danh mục tự nhập được giữ nguyên trên thẻ sản phẩm, trang chi tiết, banner quảng cáo và thuộc tính `Category` trong metadata NFT. Dùng trường `category` hiện có, không cần cập nhật schema hay reset dữ liệu. Metadata đã ghim vẫn tuân theo quy tắc bất biến hiện tại.
 - Sau khi lưu thành công, trang hiển thị tên, mô tả, giá và liên kết **Xem thông tin sản phẩm**.
 - Nếu chọn đăng bán blockchain: tiếp tục ghim IPFS, mint và đăng bán qua ví. Bản nháp chỉ xuất hiện công khai sau khi event listing đã đồng bộ. Nếu bỏ chọn, tin thông thường xuất hiện ngay sau lưu.
 - Trang `/product/<id>` lấy đúng thông tin từ cơ sở dữ liệu.
@@ -39,7 +41,7 @@ Dữ liệu lưu trong Docker volume `postgres_data` và còn sau khi khởi đ�
 
 Ảnh và metadata IPFS nằm trong volume `ipfs_data`. Xem [IPFS_STORAGE.md](IPFS_STORAGE.md) để kiểm tra pin và sao lưu/khôi phục CAR; sao lưu PostgreSQL riêng vì CAR không chứa tài khoản/catalog.
 
-Đăng ký và xác thực email trước khi đăng sản phẩm. Mỗi tài khoản có hồ sơ và sản phẩm riêng. Email thử nghiệm xem tại http://localhost:8025. Xem [hướng dẫn tài khoản và OAuth](AUTH_SETUP.md) và [hướng dẫn blockchain](BLOCKCHAIN_SETUP.md).
+Đăng nhập bằng MetaMask trước khi đăng sản phẩm. Mỗi địa chỉ ví mở một hồ sơ riêng; ví mới tự tạo tài khoản. Đổi account MetaMask yêu cầu ký đăng nhập lại. Không cần email hoặc Mailpit. Xem [hướng dẫn đăng nhập ví](AUTH_SETUP.md) và [hướng dẫn blockchain](BLOCKCHAIN_SETUP.md).
 
 ## Ảnh bìa, hướng dẫn ví và banner trang chủ
 
@@ -60,3 +62,11 @@ npm.cmd run test:products --prefix apps/web
 ```
 
 Kiểm thử tạo mặt hàng, kiểm tra dữ liệu trong PostgreSQL, API chi tiết, danh sách, bộ lọc và hồ sơ; sau đó chỉ xóa dữ liệu thử nghiệm vừa tạo.
+
+Kiểm thử danh mục **Khác** trên desktop/mobile, cả tiếng Việt và tiếng Anh (cần web, PostgreSQL, blockchain và IPFS đang chạy):
+
+```powershell
+npm.cmd run test:ui --prefix apps/web -- tests/ui/custom-category.spec.ts
+```
+
+Bài kiểm thử kiểm tra ô nhập ẩn/hiện, trường bắt buộc, giới hạn 80 ký tự, dữ liệu lưu thật, hiển thị danh mục và metadata đọc lại từ IPFS; chỉ xóa tài khoản/sản phẩm do bài kiểm thử tạo.

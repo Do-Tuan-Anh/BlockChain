@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { ArrowUpRight, Package } from 'lucide-react';
 import { useTranslation } from "../contexts/LanguageContext";
 import { mediaUrl } from '@/lib/media';
+import { productCategoryLabel } from '@/lib/product-category';
 
 export interface ProductCardProps {
   id: string;
@@ -55,7 +56,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       <div className="p-5 flex-1 flex flex-col justify-between gap-2">
         <div>
           <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted mb-3">
-            <span>{t(`categories.${category}`) !== `categories.${category}` ? t(`categories.${category}`) : category}</span>
+            <span className="min-w-0 [overflow-wrap:anywhere]">{productCategoryLabel(category, t)}</span>
             <span className="bg-elevated px-2 py-0.5 rounded text-secondary font-medium">
               {t(`conditions.${condition}`) !== `conditions.${condition}` ? t(`conditions.${condition}`) : condition}
             </span>

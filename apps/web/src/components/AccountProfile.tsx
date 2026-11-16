@@ -10,10 +10,11 @@ interface Profile {
   name: string | null; username: string; bio: string | null; city: string | null;
   address: string | null; website: string | null; avatarUrl: string | null; image: string | null;
   coverUrl: string | null;
+  walletAddress: string | null;
 }
 const inputClass = 'mt-2 w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm outline-none focus:border-accent/30 focus:ring-4 focus:ring-accent/15';
 
-export default function AccountProfile() {
+export default function AccountProfile({ onboarding = false, nextPath }: { onboarding?: boolean; nextPath?: string } = {}) {
   const { locale, t } = useTranslation();
   const vi = locale === 'vi';
   const { update } = useSession();
@@ -60,29 +61,42 @@ export default function AccountProfile() {
   async function save(event: React.FormEvent) {
     event.preventDefault(); setSaving(true); setSaved(false); setError('');
     try {
-      const response = await fetch('/api/me', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...fields, avatarData, coverData }) });
+      const response = await fetch('/api/me', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...fields, avatarData, coverData, ...(onboarding ? { completeOnboarding: true } : {}) }) });
       const result = await response.json();
       if (!response.ok) { setError(result.error === 'INVALID_AVATAR' ? 'avatar' : result.error === 'INVALID_COVER' ? 'cover' : 'save'); return; }
       setProfile(result.user); setAvatarData(undefined); setCoverData(undefined); await update(); setSaved(true);
+      if (onboarding) window.location.assign(nextPath || `/${locale}`);
     } catch { setError('save'); }
     finally { setSaving(false); }
+  }
+  async function skip() {
+    if (saving || reading) return;
+    setSaving(true); setError('');
+    try {
+      const response = await fetch('/api/me/onboarding', { method: 'POST' });
+      if (!response.ok) throw new Error('SKIP_FAILED');
+      await update();
+      window.location.assign(nextPath || `/${locale}`);
+    } catch { setError('save'); setSaving(false); }
   }
   if (!profile) return <p role={error ? 'alert' : 'status'} className="p-12 text-center text-muted">{t(error ? 'common.error' : 'common.loading')}</p>;
   const avatar = avatarData === undefined ? profile.avatarUrl || profile.image : avatarData;
   const cover = coverData === undefined ? profile.coverUrl : coverData;
   return <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-    <a href={`/${locale}/profile`} className="text-sm font-medium text-accent-soft hover:underline">← {vi ? 'Về trang cá nhân' : 'Back to profile'}</a>
-    <h1 className="mt-5 text-3xl sm:text-4xl font-bold">{vi ? 'Chỉnh sửa trang cá nhân' : 'Edit profile'}</h1>
-    <p className="mt-2 text-sm text-muted">{vi ? 'Cập nhật ảnh bìa, ảnh đại diện và thông tin của bạn tại đây.' : 'Update your cover photo, avatar and details here.'}</p>
+    {!onboarding && <a href={`/${locale}/profile`} className="text-sm font-medium text-accent-soft hover:underline">← {vi ? 'Về trang cá nhân' : 'Back to profile'}</a>}
+    {onboarding && <p className="eyebrow">{vi ? 'Chào mừng đến TrustChain' : 'Welcome to TrustChain'}</p>}
+    <h1 className="mt-5 text-3xl sm:text-4xl font-bold">{onboarding ? (vi ? 'Thiết lập trang cá nhân' : 'Set up your profile') : (vi ? 'Chỉnh sửa trang cá nhân' : 'Edit profile')}</h1>
+    <p className="mt-2 text-sm text-muted">{onboarding ? (vi ? 'Thêm tên, ảnh đại diện và giới thiệu để mọi người nhận ra bạn. Bạn có thể để sau và sửa bất kỳ lúc nào.' : 'Add a name, photo and bio so others can recognize you. You can skip this and edit your profile anytime.') : (vi ? 'Cập nhật ảnh bìa, ảnh đại diện và thông tin của bạn tại đây.' : 'Update your cover photo, avatar and details here.')}</p>
+    {profile.walletAddress && <div className="mt-5 rounded-xl border border-line bg-inset p-4"><p className="text-xs text-muted">{vi ? 'Ví của tài khoản này' : 'Wallet for this account'}</p><p data-testid="profile-wallet-address" className="mt-2 break-all font-mono text-xs text-accent-soft">{profile.walletAddress}</p></div>}
     <form onSubmit={save} className="mt-8 space-y-6">
       <fieldset disabled={saving || reading} className="space-y-6 disabled:opacity-70">
-        <section className="overflow-hidden rounded-2xl border border-line bg-surface">
+        {!onboarding && <section className="overflow-hidden rounded-2xl border border-line bg-surface">
           <div className="profile-cover !h-auto w-full aspect-[3/1]">{cover && <img src={cover} alt={vi ? 'Ảnh bìa xem trước' : 'Cover photo preview'} className="absolute inset-0 h-full w-full object-cover" />}</div>
           <div className="space-y-3 p-6 sm:p-8"><h2 className="font-semibold">{vi ? 'Ảnh bìa' : 'Cover photo'}</h2>
             <div className="flex flex-wrap gap-3"><label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent-soft focus-within:ring-2 focus-within:ring-accent"><Camera size={17} />{vi ? 'Chọn ảnh bìa' : 'Choose cover photo'}<input ref={coverInput} aria-label={vi ? 'Chọn ảnh bìa' : 'Choose cover photo'} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={event => void selectPhoto(event.target.files?.[0], 'cover')} /></label>{cover && <button type="button" onClick={() => { setCoverData(null); setSaved(false); }} className="rounded-xl px-3 py-2 text-sm text-danger hover:bg-danger/10">{vi ? 'Xóa ảnh bìa' : 'Remove cover photo'}</button>}</div>
             <p className="text-xs text-muted">{vi ? 'Ảnh công khai trên trang cá nhân/shop. JPG, PNG hoặc WebP tối đa 5 MB; cắt giữa ảnh theo tỉ lệ 3:1 khi lưu. Nên chọn ảnh ngang.' : 'Visible on your public profile/shop. JPG, PNG or WebP up to 5 MB; cropped centrally to 3:1 on save. Use a landscape image.'}</p>
           </div>
-        </section>
+        </section>}
         <section className="rounded-2xl border border-line bg-surface p-6 sm:p-8">
           <h2 className="font-semibold">{vi ? 'Ảnh đại diện' : 'Profile photo'}</h2>
           <div className="mt-5 flex flex-wrap items-center gap-6">
@@ -100,17 +114,17 @@ export default function AccountProfile() {
           <div><h2 className="flex items-center gap-2 font-semibold"><UserRound size={18} />{vi ? 'Thông tin công khai' : 'Public details'}</h2><p className="mt-2 text-xs text-muted">{vi ? 'Mọi người có thể xem những thông tin này trên trang cá nhân.' : 'These details are visible to visitors on your profile.'}</p></div>
           <div><label htmlFor="profile-name" className="text-sm font-medium">{vi ? 'Tên hiển thị' : 'Display name'}</label><input id="profile-name" value={fields.name} onChange={e => { setFields({ ...fields, name: e.target.value }); setSaved(false); }} required minLength={2} maxLength={80} autoComplete="name" className={inputClass} /></div>
           <div><label htmlFor="profile-bio" className="text-sm font-medium">{t('profile.bio')}</label><textarea id="profile-bio" rows={4} value={fields.bio} onChange={e => { setFields({ ...fields, bio: e.target.value }); setSaved(false); }} maxLength={1000} className={inputClass} /></div>
-          <div><label htmlFor="profile-city" className="text-sm font-medium">{vi ? 'Tỉnh / Thành phố' : 'City / Province'}</label><input id="profile-city" value={fields.city} onChange={e => { setFields({ ...fields, city: e.target.value }); setSaved(false); }} maxLength={100} autoComplete="address-level1" className={inputClass} /></div>
-          <div><label htmlFor="profile-website" className="text-sm font-medium">{vi ? 'Website / Liên kết giới thiệu' : 'Website / Profile link'}</label><input id="profile-website" type="url" placeholder="https://example.com" value={fields.website} onChange={e => { setFields({ ...fields, website: e.target.value }); setSaved(false); }} maxLength={300} pattern="https?://.*" className={inputClass} /></div>
+          {!onboarding && <div><label htmlFor="profile-city" className="text-sm font-medium">{vi ? 'Tỉnh / Thành phố' : 'City / Province'}</label><input id="profile-city" value={fields.city} onChange={e => { setFields({ ...fields, city: e.target.value }); setSaved(false); }} maxLength={100} autoComplete="address-level1" className={inputClass} /></div>}
+          {!onboarding && <div><label htmlFor="profile-website" className="text-sm font-medium">{vi ? 'Website / Liên kết giới thiệu' : 'Website / Profile link'}</label><input id="profile-website" type="url" placeholder="https://example.com" value={fields.website} onChange={e => { setFields({ ...fields, website: e.target.value }); setSaved(false); }} maxLength={300} pattern="https?://.*" className={inputClass} /></div>}
         </section>
-        <section className="space-y-4 rounded-2xl border border-line bg-surface p-6 sm:p-8">
+        {!onboarding && <section className="space-y-4 rounded-2xl border border-line bg-surface p-6 sm:p-8">
           <h2 className="flex items-center gap-2 font-semibold"><LockKeyhole size={18} />{vi ? 'Thông tin riêng tư' : 'Private details'}</h2>
           <div><label htmlFor="profile-address" className="text-sm font-medium">{vi ? 'Địa chỉ chi tiết' : 'Street address'}</label><textarea id="profile-address" rows={2} value={fields.address} onChange={e => { setFields({ ...fields, address: e.target.value }); setSaved(false); }} maxLength={300} autoComplete="street-address" aria-describedby="address-privacy" className={inputClass} /><p id="address-privacy" className="mt-2 text-xs leading-5 text-muted">{vi ? 'Chỉ bạn xem được địa chỉ này trong phần chỉnh sửa; không hiển thị trên trang cá nhân công khai.' : 'Only you can see this address in the editor; it is not shown on your public profile.'}</p></div>
-        </section>
+        </section>}
       </fieldset>
       {error && <p role="alert" className="rounded-xl bg-danger/10 p-4 text-sm text-danger">{error === 'cover' ? (vi ? 'Ảnh bìa không hợp lệ. Chọn JPG, PNG hoặc WebP tối đa 5 MB, tối đa 16 triệu điểm ảnh.' : 'Invalid cover photo. Choose JPG, PNG or WebP up to 5 MB and 16 megapixels.') : error === 'avatar' ? (vi ? 'Ảnh không hợp lệ. Chọn ảnh JPG, PNG hoặc WebP dưới 2 MB, tối đa 16 triệu điểm ảnh.' : 'Invalid photo. Choose JPG, PNG or WebP under 2 MB, up to 16 megapixels.') : t('common.error')}</p>}
       {saved && <p role="status" className="rounded-xl bg-positive/10 p-4 text-sm text-positive">{t('profile.saved')}</p>}
-      <div className="flex items-center justify-end gap-4"><a href={`/${locale}/profile`} className="rounded-xl px-5 py-3 text-sm text-secondary hover:bg-elevated">{vi ? 'Hủy' : 'Cancel'}</a><button type="submit" disabled={saving || reading} className="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-50">{t(saving ? 'profile.saving' : 'profile.saveChanges')}</button></div>
+      <div className="flex flex-wrap items-center justify-end gap-4">{onboarding ? <button type="button" disabled={saving || reading} onClick={() => void skip()} className="btn-secondary">{vi ? 'Để sau' : 'Do this later'}</button> : <a href={`/${locale}/profile`} className="rounded-xl px-5 py-3 text-sm text-secondary hover:bg-elevated">{vi ? 'Hủy' : 'Cancel'}</a>}<button type="submit" disabled={saving || reading} className="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-50">{onboarding && !saving ? (vi ? 'Lưu và bắt đầu' : 'Save and get started') : t(saving ? 'profile.saving' : 'profile.saveChanges')}</button></div>
     </form>
   </div>;
 }

@@ -2,6 +2,8 @@
 
 Đây là checklist theo phạm vi project; nhóm cần đối chiếu rubric giảng viên. Không tự điền tên nhóm hay kết quả chưa thực hiện.
 
+Các chức năng đề xuất bổ sung được đặc tả trong [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md). Đây là kế hoạch phát triển, không phải bằng chứng đã triển khai hoặc yêu cầu bắt buộc phải hoàn tất toàn bộ trước khi nộp bài.
+
 | Hạng mục | Tài liệu/bằng chứng | Trạng thái |
 |---|---|---|
 | Bài toán, mục tiêu, phạm vi, giới hạn | [WHITE_PAPER.md](WHITE_PAPER.md) | Đã soạn theo runtime |
@@ -17,3 +19,6 @@
 | Audit độc lập / hiệu năng production | Ngoài phạm vi đồ án local | Chưa thực hiện |
 
 Gợi ý thứ tự trình bày: bài toán → vì sao cần blockchain → kiến trúc → demo chuyển tài sản → test/gas → giới hạn. Khi nộp repo, kiểm tra không đưa `.env`, private key, backup nội dung riêng tư hay log ví Hardhat vào Git. Chỉ công bố video và bằng chứng đã rà soát của nhóm.
+# Cập nhật xác thực 15/11/2026
+
+Đăng nhập hiện dùng chữ ký MetaMask, mỗi địa chỉ ví mở một tài khoản. Các mục kiểm thử email trong báo cáo lịch sử không còn mô tả luồng hiện tại. Xem [hướng dẫn](WALLET_LOGIN.md) và [kiểm thử chuyển đổi](WALLET_LOGIN_TEST_REPORT.md). F02–F07 chưa triển khai.

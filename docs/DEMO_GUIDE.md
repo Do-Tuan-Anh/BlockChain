@@ -2,6 +2,8 @@
 
 ## Chuẩn bị
 
+Cập nhật 15/11/2026: đăng nhập bằng chữ ký MetaMask thay email/mật khẩu. Chọn Seller/Buyer là chọn địa chỉ ví và ký đăng nhập lại. Dùng hai browser profile nếu cần mở đồng thời hai vai; hai tab cùng profile dùng chung phiên. Script/test cũ nhập email cần chuyển sang fixture ví trước khi chạy. Xem [AUTH_SETUP](AUTH_SETUP.md).
+
 Chạy theo [BLOCKCHAIN_SETUP.md](BLOCKCHAIN_SETUP.md). Đảm bảo web, PostgreSQL, IPFS, Hardhat và indexer hoạt động. Hai tài khoản web và hai ví riêng có ETH local; một ví trọng tài và tài khoản ADMIN nếu trình diễn phân xử. Dùng ảnh sản phẩm không chứa thông tin cá nhân.
 
 Không đặt trước tokenId/orderId hoặc số dư giả trong slide. Ghi ID từ giao dịch đang chạy. Nếu dùng local, nói rõ local và không mở Etherscan như thể đó là tx testnet.

@@ -2,6 +2,8 @@
 
 ## Mỗi lần demo
 
+Từ 15/11/2026, bấm **Đăng nhập bằng MetaMask**, chọn account và ký thông điệp đăng nhập miễn phí gas. Mỗi địa chỉ ví mở một hồ sơ; đổi account yêu cầu ký lại. Không cần email hoặc Mailpit cho đăng nhập. Xem [hướng dẫn tài khoản](WALLET_LOGIN.md).
+
 1. Mở Docker Desktop, chờ engine chạy.
 2. Bấm đúp **Start-TrustChain.cmd** ở thư mục gốc project. Hoặc mở terminal tại đó và chạy `npm.cmd run demo:up`.
 3. Vào http://localhost:3000/vi. Mở khóa MetaMask, chọn account đã liên kết và mạng **TrustChain Local** (RPC `http://127.0.0.1:8545`, Chain ID `31337`).
@@ -11,6 +13,12 @@ Lệnh bật PostgreSQL, Mailpit, IPFS và node Anvil, kiểm tra contract, đ�
 Nếu MetaMask đã cấp quyền cho website và đang chọn đúng account/mạng, web tự nhận lại kết nối khi tải trang hoặc quay về tab. Không tự mở khóa MetaMask, không tự đổi account, không tự ký giao dịch. Sau khi đăng xuất/ngắt quyền, cần bấm **Kết nối ví** để cấp lại quyền.
 
 Nếu MetaMask còn hiển thị lỗi cũ, mở lại tiện ích/chọn lại TrustChain Local, rồi F5 web. Kiểm tra http://localhost:3000/api/chain/health: `ready: true` nghĩa RPC và contract hiện tại đã khớp. Không reset ví để sửa lỗi mạng.
+
+Nếu web báo **HTTP 431 sau đăng nhập**, xem [cách sửa cookie](WALLET_LOGIN.md): chạy `node scripts/repair-auth-cookies.cjs`, mở http://localhost:3002/ và đăng nhập lại. Bản sửa JWT không còn nhúng avatar trong cookie.
+
+Nếu Docker log có `failed to parse json ... state.json ... EOF`, đó là state blockchain bị ghi dang dở, không phải lỗi đăng nhập. Sao lưu file hỏng và manifest trước; cần một bản state hợp lệ cùng deployment để khôi phục nguyên vẹn. Không xóa state hoặc tự deploy lại để vượt lỗi. Bản gốc phát hiện ngày 15/11/2026 đã được giữ tại `.local/backups/chain-corrupt-2026-11-15/`.
+
+**Đã xử lý trường hợp ngày 15/11/2026:** khôi phục toàn bộ 90 giao dịch từ dữ liệu còn đủ trong file, đối chiếu receipt/state roots và giữ nguyên deployment. Node đã chạy lại, luồng mint/mua/giải ngân và kiểm thử restart đã qua. Có checkpoint blockchain riêng mỗi 30 giây ở `.local/backups/chain-checkpoints/`; xem [báo cáo khôi phục và kiểm thử](CHAIN_RECOVERY_2026_11_15.md). Không tự áp dụng cách này nếu một file hỏng khác thiếu dữ liệu để kiểm chứng.
 
 ## Những gì được lưu
 

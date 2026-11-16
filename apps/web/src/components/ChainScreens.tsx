@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Contract, BrowserProvider, Eip1193Provider, formatEther, keccak256 } from 'ethers';
 import { useParams } from 'next/navigation';
-import { apiJson, useWallet } from '@/contexts/WalletContext';
+import { apiJson, useWallet, transactionErrorMessage } from '@/contexts/WalletContext';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { WalletPanel, TxLink } from './ChainControls';
 import type { ContractName } from '@/lib/chain/types';
@@ -44,7 +44,7 @@ export function OrderScreen() {
   const [now, setNow] = useState(0);
   useEffect(() => { setNow(Date.now()); }, [order?.state]);
   async function action(contract: ContractName, method: string, args: unknown[]) {
-    setError(''); try { await w.run(contract, method, args); } catch (e) { setError((e as Error).message); }
+    setError(''); try { await w.run(contract, method, args); } catch (e) { setError(transactionErrorMessage(e, w.vi)); }
   }
   return <div className="page-shell max-w-5xl space-y-6"><a className="text-accent-soft" href={`/${w.locale}/nfts`}>← {w.vi ? 'Kho chứng nhận & đơn hàng' : 'Certificates & orders'}</a><h1 className="text-3xl font-bold">{w.vi ? 'Đơn hàng' : 'Order'} #{id}</h1><WalletPanel />
     {!order ? <p className="glass-panel p-6">{w.vi ? 'Chưa tìm thấy đơn trong dữ liệu đã đồng bộ. Nếu vừa thanh toán, hãy chờ xác nhận rồi bấm Đồng bộ.' : 'Order not indexed yet. If you just paid, wait for confirmations and sync.'}</p> : <>
@@ -90,7 +90,7 @@ export function DisputesScreen() {
   }, [w.address, w.config?.scope]);
   const disputes = w.snapshot?.records.filter(r => r.kind === 'dispute') || [];
   async function act(id: string, method: string, ruling?: number) {
-    setError(''); try { await w.run('DisputeResolution', method, ruling === undefined ? [id] : [id, ruling]); } catch (e) { setError((e as Error).message); }
+    setError(''); try { await w.run('DisputeResolution', method, ruling === undefined ? [id] : [id, ruling]); } catch (e) { setError(transactionErrorMessage(e, w.vi)); }
   }
   return <div className="page-shell space-y-6"><h1 className="text-3xl font-bold">{w.vi ? 'Phân xử tranh chấp' : 'Dispute arbitration'}</h1><WalletPanel /><p className="text-sm text-muted">{w.vi ? 'Quyền quản trị web và quyền ARBITRATOR_ROLE trên contract là hai quyền riêng. Ví đang ký phải có quyền trên contract.' : 'Web administration and the on-chain ARBITRATOR_ROLE are separate. The signing wallet must hold the contract role.'}</p>
     {!arbitrator && <p className="text-warning">{w.vi ? 'Kết nối ví được cấp ARBITRATOR_ROLE để xử lý.' : 'Connect a wallet with ARBITRATOR_ROLE to arbitrate.'}</p>}

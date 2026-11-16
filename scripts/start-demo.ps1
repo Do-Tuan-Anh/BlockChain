@@ -18,6 +18,8 @@ try {
     if (!(Test-Path 'apps/web/node_modules')) { npm.cmd ci --prefix apps/web; if ($LASTEXITCODE -ne 0) { throw 'Web dependency installation failed.' } }
     node scripts/setup-auth-env.cjs
     if ($LASTEXITCODE -ne 0) { throw 'Environment setup failed.' }
+    node scripts/upgrade-profile-onboarding.cjs
+    if ($LASTEXITCODE -ne 0) { throw 'Profile onboarding upgrade failed; existing data was not reset.' }
     node scripts/ensure-demo-chain.cjs
     if ($LASTEXITCODE -ne 0) { throw 'Blockchain verification failed; no automatic reset was attempted.' }
 
@@ -35,6 +37,11 @@ try {
     $logDir = Join-Path $demoRoot '.local/demo'
     New-Item -ItemType Directory -Path $logDir -Force | Out-Null
     $nodeBin = (Get-Command node).Source
+    $checkpointPath = Join-Path $demoRoot 'scripts/checkpoint-chain.cjs'
+    $checkpointWorker = Get-CimInstance Win32_Process -Filter "Name='node.exe'" | Where-Object { $_.CommandLine -and $_.CommandLine.Contains($checkpointPath) }
+    if (!$checkpointWorker) {
+        Start-Process -FilePath $nodeBin -ArgumentList @('"' + $checkpointPath + '"', '--watch') -WorkingDirectory $demoRoot -WindowStyle Hidden -RedirectStandardOutput (Join-Path $logDir 'chain-checkpoint.log') -RedirectStandardError (Join-Path $logDir 'chain-checkpoint-error.log') | Out-Null
+    }
     # Detect only this workspace's worker; do not terminate other Node processes.
     $workerPath = Join-Path $demoRoot 'apps/indexer/worker.cjs'
     $worker = Get-CimInstance Win32_Process -Filter "Name='node.exe'" | Where-Object { $_.CommandLine -and $_.CommandLine.Contains($workerPath) }

@@ -5,6 +5,9 @@ import { useSession } from 'next-auth/react';
 import { useTranslation } from './LanguageContext';
 import abis from '@/lib/chain/abis.json';
 import type { ChainConfig, ChainSnapshot, ContractName } from '@/lib/chain/types';
+import { escrowActionError, transactionErrorMessage } from '@/lib/chain/wallet-errors.cjs';
+import { useWalletBalance } from './useWalletBalance';
+export { transactionErrorMessage } from '@/lib/chain/wallet-errors.cjs';
 
 type Injected = Eip1193Provider & { on?: (name: string, callback: () => void) => void; removeListener?: (name: string, callback: () => void) => void };
 const injected = () => (window as unknown as { ethereum?: Injected }).ethereum;
@@ -14,13 +17,7 @@ export async function apiJson(url: string, body?: unknown) {
   if (!res.ok) throw new Error(data.error || 'REQUEST_FAILED');
   return data;
 }
-function message(error: unknown) {
-  const e = error as { code?: string | number; shortMessage?: string; message?: string };
-  if (e.message === 'CHAIN_RPC_UNAVAILABLE') return 'Mạng blockchain chưa chạy. Mở Docker Desktop rồi chạy npm run demo:up / Blockchain offline. Start Docker Desktop and run npm run demo:up.';
-  if (e.message === 'CHAIN_RESET_REDEPLOY_REQUIRED') return 'Blockchain không khớp bản triển khai đã lưu. Chạy npm run demo:up để kiểm tra; không reset dữ liệu / Blockchain deployment mismatch. Run npm run demo:up; do not reset data.';
-  return e.code === 4001 || e.code === 'ACTION_REJECTED' ? 'Bạn đã từ chối yêu cầu trong ví / Request rejected in wallet.' : e.shortMessage || e.message || 'Transaction failed';
-}
-interface WalletState {
+interface WalletState extends ReturnType<typeof useWalletBalance> {
   address: string; linked: string; config: ChainConfig | null; snapshot: ChainSnapshot | null;
   busy: boolean; status: string; error: string; hash: string;
   connect: () => Promise<void>; disconnect: () => Promise<void>; refresh: (sync?: boolean) => Promise<ChainSnapshot>;
@@ -32,10 +29,15 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const { locale } = useTranslation();
   const vi = locale === 'vi';
+  const message = (error: unknown) => transactionErrorMessage(error, vi);
   const [address, setAddress] = useState(''), [linked, setLinked] = useState('');
+  const [linkedUserId, setLinkedUserId] = useState('');
   const [snapshot, setSnapshot] = useState<ChainSnapshot | null>(null);
   const [busy, setBusy] = useState(false), [status, setStatus] = useState(''), [error, setError] = useState(''), [hash, setHash] = useState('');
   const lock = useRef(false);
+  const balanceState = useWalletBalance(linkedUserId === session?.user?.id ? linkedUserId : '', linked, snapshot?.config.scope || '');
+  const { refreshBalance } = balanceState;
+  useEffect(() => { void refreshBalance(); }, [snapshot, refreshBalance]);
   const refresh = useCallback(async (sync = false) => {
     if (sync) await apiJson('/api/chain/sync', {});
     const data = await apiJson('/api/chain') as ChainSnapshot;
@@ -45,8 +47,9 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let active = true;
     setLinked('');
+    setLinkedUserId('');
     setAddress('');
-    if (session?.user?.id) apiJson('/api/chain/wallet').then(data => { if (active) setLinked(data.walletAddress || ''); }).catch(() => {});
+    if (session?.user?.id) apiJson('/api/chain/wallet').then(data => { if (active) { setLinked(data.walletAddress || ''); setLinkedUserId(session.user.id); } }).catch(() => {});
     return () => { active = false; };
   }, [session?.user?.id]);
   useEffect(() => {
@@ -63,7 +66,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         if (Number(BigInt(chainId)) !== c.chainId) return;
         await apiJson('/api/chain/health');
         const block = await eth.request({ method: 'eth_getBlockByNumber', params: ['0x' + c.deploymentBlock.toString(16), false] }) as { hash?: string } | null;
-        if (active && id === request && block?.hash === c.deploymentBlockHash) { setAddress(accounts[0].toLowerCase()); setError(''); }
+        if (active && id === request && block?.hash === c.deploymentBlockHash) { setAddress(accounts[0].toLowerCase()); }
       } catch { /* A locked wallet or offline node stays disconnected until the user retries. */ }
     };
     const changed = () => { void restore(); };
@@ -86,7 +89,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId }] });
     }
     await eth.request({ method: 'eth_requestAccounts' });
-    const provider = new BrowserProvider(eth);
+    const provider = new BrowserProvider(eth, undefined, { cacheTimeout: -1 });
     if (Number((await provider.getNetwork()).chainId) !== c.chainId) throw new Error('WRONG_WALLET_CHAIN');
     if ((await provider.getBlock(c.deploymentBlock))?.hash !== c.deploymentBlockHash) throw new Error('CHAIN_RESET_REDEPLOY_REQUIRED');
     return provider.getSigner();
@@ -104,7 +107,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         const signature = await signer.signMessage(challenge.message);
         await apiJson('/api/chain/wallet', { address, message: challenge.message, signature });
       }
-      setAddress(address); setLinked(address); setStatus(vi ? 'Ví đã liên kết' : 'Wallet linked');
+      setAddress(address); setLinked(address); setLinkedUserId(session.user.id); setStatus(vi ? 'Ví đã liên kết' : 'Wallet linked');
     } catch (e) { setError(message(e)); throw e; }
     finally { lock.current = false; setBusy(false); }
   }
@@ -121,7 +124,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   }
   async function run(name: ContractName, method: string, args: unknown[], value?: bigint, onSubmitted?: (hash: string) => void) {
     if (lock.current) throw new Error('TRANSACTION_IN_PROGRESS');
-    lock.current = true; setBusy(true); setError(''); setHash('');
+    lock.current = true; setBusy(true); setError(''); setHash(''); setStatus('');
     try {
       const c = (await refresh()).config, signer = await signerFor(c);
       const wallet = (await signer.getAddress()).toLowerCase();
@@ -129,6 +132,13 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       if (current.walletAddress?.toLowerCase() !== wallet) throw new Error('LINK_THIS_WALLET_FIRST');
       setAddress(wallet); setLinked(wallet);
       const contract = new Contract(c.contracts[name], abis[name], signer);
+      // Indexed UI data can lag behind another tab or a transaction already confirmed.
+      // Read the actual contract before asking the wallet to sign a settlement again.
+      if (name === 'Escrow' && ['confirmDeliveryAndRelease', 'refundBuyer', 'claimTimeoutRelease'].includes(method)) {
+        const deposit = await contract.getEscrow(args[0]);
+        const settled = escrowActionError(deposit.state);
+        if (settled) throw new Error(settled);
+      }
       setStatus(vi ? 'Xác nhận giao dịch trong ví…' : 'Confirm in your wallet…');
       const tx = await contract[method](...args, ...(value === undefined ? [] : [{ value }])) as TransactionResponse;
       setHash(tx.hash); onSubmitted?.(tx.hash); setStatus(vi ? 'Đang chờ xác nhận blockchain…' : 'Waiting for blockchain confirmations…');
@@ -143,7 +153,12 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       try { await refresh(true); setStatus(vi ? 'Giao dịch thành công' : 'Transaction confirmed'); }
       catch { setStatus(vi ? 'Giao dịch đã xác nhận. Bấm đồng bộ để cập nhật dữ liệu.' : 'Transaction confirmed. Refresh to sync indexed data.'); }
       return receipt;
-    } catch (e) { setError(message(e)); throw e; }
+    } catch (e) {
+      setStatus('');
+      // A failed/repeated action must not leave stale actionable buttons on screen.
+      await refresh(true).catch(() => {});
+      setError(message(e)); throw e;
+    }
     finally { lock.current = false; setBusy(false); }
   }
   async function resume(txHash: string) {
@@ -155,6 +170,6 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     if (!receipt || receipt.status !== 1) throw new Error('TRANSACTION_REVERTED');
     await refresh(true);
   }
-  return <Context.Provider value={{ address, linked, config: snapshot?.config || null, snapshot, busy, status, error, hash, connect, disconnect, refresh, run, resume }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ ...balanceState, address, linked, config: snapshot?.config || null, snapshot, busy, status, error, hash, connect, disconnect, refresh, run, resume }}>{children}</Context.Provider>;
 }
 export function useWallet() { const value = useContext(Context); if (!value) throw new Error('WalletProvider missing'); return value; }

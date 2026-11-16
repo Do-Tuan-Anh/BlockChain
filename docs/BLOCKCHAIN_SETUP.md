@@ -34,10 +34,10 @@ Hardhat node giữ trạng thái khi tiến trình còn chạy, **không lưu ch
 
 ## 2. Ví và tài khoản
 
-1. Đăng ký, xác thực email bằng Mailpit, đăng nhập web.
+1. Bấm Đăng nhập bằng MetaMask, chọn account và ký thông điệp TrustChain sign-in miễn phí gas. Ví mới tự tạo hồ sơ; ví đã liên kết mở đúng hồ sơ cũ.
 2. Mở Kho chứng nhận hoặc chi tiết sản phẩm, bấm **Kết nối ví**.
 3. Ví chuyển/thêm mạng `TrustChain Local`, chain ID `31337`, RPC `http://127.0.0.1:8545`.
-4. Ký thông điệp liên kết ví. Đây là chữ ký xác thực, không phải thanh toán. Nonce hết hạn sau 5 phút, gắn với tài khoản đăng nhập và chỉ dùng một lần.
+4. Ví đã được gắn với tài khoản từ chữ ký đăng nhập. Kết nối blockchain kiểm tra đúng mạng/deployment trước khi gửi giao dịch; đổi account yêu cầu đăng nhập lại. Xem [AUTH_SETUP](AUTH_SETUP.md).
 5. Dùng một tài khoản Hardhat dành riêng cho demo trong MetaMask; private key hiển thị ở terminal chạy node. Các key này công khai và chỉ dùng local, tuyệt đối không dùng giữ tài sản thật. Người bán/người mua cần hai tài khoản web và hai ví khác nhau.
 
 Ví được cố định theo tài khoản sau khi liên kết để bảo toàn danh tính người đăng bán. Không có chức năng đổi ví tự do trong đợt tích hợp này. Sau khi reset Hardhat, MetaMask có thể cần xóa dữ liệu hoạt động/nonce của **ví local**.

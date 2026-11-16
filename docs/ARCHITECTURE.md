@@ -39,7 +39,7 @@ flowchart TB
 | IPFS | `apps/web/src/lib/ipfs.cjs` | Pin, tính lại CID bằng importer, giới hạn nội dung đọc, replica tùy chọn |
 | Prototype ngoài luồng chính | `apps/api`, schema root, `contracts/` | Không dùng để chứng minh runtime web hiện tại |
 
-Không có Redis, oracle giao hàng, vận chuyển tích hợp, mã hóa địa chỉ cấp ứng dụng hoặc SIWE login chuẩn trong runtime này. Email/mật khẩu vẫn là phương thức đăng nhập; chữ ký ví dùng để **liên kết ví vào phiên đã đăng nhập**. Google/Facebook chỉ hoạt động khi cấu hình OAuth riêng.
+Từ 15/11/2026, NextAuth dùng provider credentials `wallet`: chữ ký personal_sign với nonce một lần, thời hạn 5 phút, origin và cookie HttpOnly gắn trình duyệt. Đây là thông điệp riêng của TrustChain, chưa phải định dạng SIWE EIP-4361. Mỗi địa chỉ ví mở một User; hồ sơ cũ được tìm theo walletAddress. Đổi account kết thúc phiên cũ và yêu cầu chữ ký mới. Email/mật khẩu và OAuth đã ngừng dùng. Không có Redis, oracle giao hàng, vận chuyển tích hợp hoặc mã hóa địa chỉ cấp ứng dụng trong runtime này. Xem [AUTH_SETUP](AUTH_SETUP.md).
 
 ## 2. Ranh giới on-chain/off-chain
 

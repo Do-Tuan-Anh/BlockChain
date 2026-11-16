@@ -3,9 +3,9 @@ import 'next-auth/jwt';
 
 declare module 'next-auth' {
   interface Session {
-    user: { id: string; name?: string | null; email?: string | null; image?: string | null; username: string; role: string };
+    user: { id: string; name?: string | null; email?: string | null; image?: string | null; username: string; role: string; walletAddress?: string; needsProfileSetup?: boolean };
   }
 }
 declare module 'next-auth/jwt' {
-  interface JWT { sessionVersion?: number; }
+  interface JWT { sessionVersion?: number; walletAddress?: string; authMethod?: string; }
 }

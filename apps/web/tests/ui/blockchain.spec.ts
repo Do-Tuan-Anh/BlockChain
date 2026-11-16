@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { PrismaClient } from '@prisma/client';
 import { randomBytes, randomUUID, scryptSync } from 'node:crypto';
-import { Wallet, JsonRpcProvider, getBytes, parseEther } from 'ethers';
+import { Wallet, JsonRpcProvider, getBytes, parseEther, formatEther } from 'ethers';
 import sharp from 'sharp';
 import fs from 'node:fs';
 
@@ -9,7 +9,8 @@ const recording = process.env.RECORD_BLOCKCHAIN_DEMO === '1';
 test.use({ video: recording ? { mode: 'on', size: { width: 1280, height: 800 } } : 'off' });
 
 // Only the wallet extension boundary is supplied by the fixture. RPC, signatures,
-// IPFS, contracts, API and database are real; no API responses are mocked.
+// IPFS, contracts, API and database are real. One stale snapshot below deliberately
+// reproduces indexer lag after a successful settlement.
 test('wallet → IPFS → NFT → listing → escrow → release in the real UI', async ({ page, context }, testInfo) => {
   test.setTimeout(recording ? 420000 : 240000);
   const provider = new JsonRpcProvider('http://127.0.0.1:8545', undefined, { cacheTimeout: -1 });
@@ -17,6 +18,7 @@ test('wallet → IPFS → NFT → listing → escrow → release in the real UI'
   const prisma = new PrismaClient(), tag = randomUUID(), password = 'Browser-chain-password-123';
   const seller = Wallet.createRandom().connect(provider), buyer = Wallet.createRandom().connect(provider);
   let active = seller;
+  let rejectNextSend = !recording;
   const ids: string[] = [];
   const pageErrors: string[] = [];
   const txHashes: string[] = [], chapters: { title: string; text: string }[] = [];
@@ -38,13 +40,11 @@ test('wallet → IPFS → NFT → listing → escrow → release in the real UI'
   page.on('pageerror', e => pageErrors.push(e.message));
   async function login(email: string, destination: string) {
     await page.goto(`/en/login?next=${encodeURIComponent(destination)}`);
-    await page.getByLabel('Email or phone number', { exact: true }).fill(email);
-    await page.getByLabel('Password', { exact: true }).fill(password);
-    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await page.getByRole('button', { name: 'Sign in with MetaMask', exact: true }).click();
     await expect(page).toHaveURL(new RegExp(destination + '$'), { timeout: 30000 });
   }
   async function connect() {
-    await page.getByRole('button', { name: 'Connect wallet', exact: true }).click();
+    await page.getByRole('button', { name: /^(Connect|Reconnect) wallet$/ }).click();
     await expect(page.getByText('Wallet linked', { exact: true })).toBeVisible();
     await expect(page.locator('main').getByTestId('wallet-link-status')).toHaveText('Wallet associated');
     await expect(page.locator('main').getByTestId('wallet-link-status')).toHaveClass(/text-positive/);
@@ -56,7 +56,7 @@ test('wallet → IPFS → NFT → listing → escrow → release in the real UI'
     const users = [];
     for (let i = 0; i < 2; i++) {
       const salt = randomBytes(16).toString('hex'), hash = scryptSync(password, salt, 64, { N: 32768, r: 8, p: 1, maxmem: 64 * 1024 * 1024 }).toString('hex');
-      const user = await prisma.user.create({ data: { email: `browser-chain-${i}-${tag}@example.test`, emailVerified: new Date(), name: `Chain tester ${i}`, passwordHash: `scrypt:${salt}:${hash}` } });
+      const user = await prisma.user.create({ data: { walletAddress: [seller, buyer][i].address.toLowerCase(), email: `browser-chain-${i}-${tag}@example.test`, emailVerified: new Date(), name: `Chain tester ${i}`, passwordHash: `scrypt:${salt}:${hash}`, profileSetupAt: new Date() } });
       ids.push(user.id); users.push(user);
     }
     await context.exposeBinding('testWalletRpc', async (_, request: { method: string; params?: any[] }) => {
@@ -68,6 +68,7 @@ test('wallet → IPFS → NFT → listing → escrow → release in the real UI'
       }
       if (request.method === 'personal_sign') return active.signMessage(getBytes(params[0]));
       if (request.method === 'eth_sendTransaction') {
+        if (rejectNextSend) { rejectNextSend = false; throw new Error('nonce too low'); }
         const tx = params[0];
         if (tx.from.toLowerCase() !== active.address.toLowerCase()) throw new Error('Wrong signer');
         const submitted = await active.sendTransaction({ to: tx.to, data: tx.data, value: tx.value, gasLimit: tx.gas, gasPrice: tx.gasPrice, maxFeePerGas: tx.maxFeePerGas, maxPriorityFeePerGas: tx.maxPriorityFeePerGas });
@@ -79,7 +80,7 @@ test('wallet → IPFS → NFT → listing → escrow → release in the real UI'
       (window as any).ethereum = { request: (args: unknown) => (window as any).testWalletRpc(args), on: () => {}, removeListener: () => {} };
     });
     await login(users[0].email!, '/en/create-listing');
-    expect((await page.request.get('/api/chain/balance')).status()).toBe(409);
+    expect((await page.request.get('/api/chain/balance')).status()).toBe(200);
     await chapter('1. TrustChain — demo local', 'Hardhat chain 31337. Ví test ký tự động qua adapter EIP-1193; đây không phải MetaMask extension hoặc testnet. Các giao dịch, IPFS và database bên dưới là thật.');
     await page.locator('#listing-title').fill(recording ? 'TrustChain — đồng hồ minh họa' : `UI chain ${tag}`);
     await page.locator('#listing-description').fill('Browser test product, real IPFS and local blockchain.');
@@ -95,6 +96,12 @@ test('wallet → IPFS → NFT → listing → escrow → release in the real UI'
     await chapter('3. Bản nháp có thể tiếp tục', 'Bản nháp chỉ chủ tài khoản nhìn thấy. Liên kết ví cần chữ ký có nonce một lần. Tiếp theo ví sẽ ký riêng ba giao dịch: mint, approve và đăng bán.');
     await connect();
     await page.getByRole('button', { name: 'Mint NFT & list', exact: true }).click();
+    if (!recording) {
+      await expect(page.getByRole('alert').filter({ hasText: /MetaMask transaction nonce/ }).first()).toBeVisible({ timeout: 45000 });
+      expect(txHashes).toHaveLength(0);
+      expect((await prisma.product.findUniqueOrThrow({ where: { id: draft.id } })).nftTokenId).toBeNull();
+      await page.getByRole('button', { name: 'Mint NFT & list', exact: true }).click();
+    }
     await expect(page.getByText('Listed on blockchain', { exact: true })).toBeVisible({ timeout: 90000 });
     let product = await prisma.product.findFirstOrThrow({ where: { sellerId: users[0].id } });
     expect(product.status).toBe('LISTED'); expect(product.nftTokenId).toBeTruthy();
@@ -151,8 +158,26 @@ test('wallet → IPFS → NFT → listing → escrow → release in the real UI'
     expect(heldHistory.totals).toEqual({ incomingWei: '0', outgoingWei: parseEther('0.15').toString(), escrowWei: parseEther('0.15').toString() });
     expect(heldHistory.entries.map((e: any) => e.kind)).toEqual(['PURCHASE']);
     await chapter('6. Đang ký quỹ — HELD', 'Tiền và NFT đang do Escrow giữ. Chưa xác nhận nhận hàng thì chưa trả tiền theo luồng bình thường. Có thể mở tranh chấp bằng hash bằng chứng; nhánh đó được kiểm chứng trong bộ test.');
+    const orderUrl = page.url();
+    const heldSnapshot = await (await page.request.get('/api/chain')).json();
     await page.getByRole('button', { name: 'Received item · Release payment', exact: true }).click();
     await expect(page.getByText('RELEASED', { exact: true })).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('main').getByTestId('wallet-balance')).toHaveAttribute('title', `${formatEther(await provider.getBalance(buyer.address))} test ETH`);
+    if (!recording) {
+      const submitted = txHashes.length;
+      let reads = 0;
+      await page.route('**/api/chain', async route => {
+        if (reads++ < 2) await route.fulfill({ json: heldSnapshot });
+        else await route.continue();
+      });
+      await page.goto(orderUrl);
+      await page.getByRole('button', { name: 'Received item · Release payment', exact: true }).click();
+      await expect(page.getByRole('alert').filter({ hasText: /already released payment/ }).first()).toBeVisible({ timeout: 30000 });
+      await expect(page.getByText('RELEASED', { exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Received item · Release payment', exact: true })).toHaveCount(0);
+      expect(txHashes).toHaveLength(submitted);
+      await page.unroute('**/api/chain');
+    }
     await chapter('7. Giải ngân — RELEASED', 'Người mua đã ký xác nhận. Contract trả tiền ròng cho người bán, phí cho treasury và chuyển NFT cho người mua. Gas của giao dịch là khoản riêng so với phí giao thức 2,5%.');
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.evaluate(() => scrollTo(0, 0));
